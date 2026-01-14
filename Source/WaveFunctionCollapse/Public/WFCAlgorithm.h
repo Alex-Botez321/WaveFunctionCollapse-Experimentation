@@ -13,7 +13,6 @@ class WAVEFUNCTIONCOLLAPSE_API UWFCAlgorithm : public UObject
 	
 
 private:
-
     
 
 public:
