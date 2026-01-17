@@ -23,16 +23,3 @@ class WAVEFUNCTIONCOLLAPSE_API ULevelDataAssetBase : public UPrimaryDataAsset
 	// or
 	// Have store adjecency rules here then rotate the rooms accordingly in spawn
 };
-
-//    Blank           UMETA(DisplayName = "Blank"),
-//    Plus            UMETA(DisplayName = "Plus"),
-//    LineHorizontal  UMETA(DisplayName = "LineHorizontal"),
-//    LineVertical    UMETA(DisplayName = "LineVertical"),
-//    T0              UMETA(DisplayName = "T0"),
-//    T90             UMETA(DisplayName = "T90"),
-//    T180            UMETA(DisplayName = "T180"),
-//    T270            UMETA(DisplayName = "T270"),
-//    Corner0         UMETA(DisplayName = "Corner0"),
-//    Corner90        UMETA(DisplayName = "Corner90"),
-//    Corner180       UMETA(DisplayName = "Corner180"),
-//    Corner270       UMETA(DisplayName = "Corner270"),
