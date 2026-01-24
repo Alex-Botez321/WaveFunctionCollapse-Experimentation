@@ -7,6 +7,13 @@
 #include "EngineUtils.h"
 #include "DrawDebugHelpers.h"
 
+//JSON includes
+#include "Dom/JsonObject.h"
+#include "Serialization/JsonWriter.h"
+#include "Serialization/JsonSerializer.h"
+#include "Misc/FileHelper.h"
+#include "Misc/Paths.h"
+
 // Sets default values
 ADataCollector::ADataCollector()
 {
@@ -19,6 +26,40 @@ ADataCollector::ADataCollector()
 void ADataCollector::BeginPlay()
 {
 	Super::BeginPlay();
+
+	//create json structure in memory
+	TSharedPtr<FJsonObject> RootObject = MakeShared<FJsonObject>();
+
+	RootObject->SetStringField(TEXT("ProjectName"), TEXT("MyUE5Game"));
+	RootObject->SetNumberField(TEXT("Version"), 1);
+	RootObject->SetBoolField(TEXT("bIsDemo"), true);
+
+	TArray<int> Test;
+	Test.SetNum(4);
+	Test[0] = 0;
+	Test[1] = 1;
+	Test[2] = 2;
+	Test[3] = 3;
+
+	RootObject->SetArrayField(TEXT("Array"), TArray<TSharedPtr<FJsonValue>>(Test));
+	
+
+	//create json valid text
+	FString OutputString;
+
+	TSharedRef<TJsonWriter<>> Writer = TJsonWriterFactory<>::Create(&OutputString);
+
+	FJsonSerializer::Serialize(RootObject.ToSharedRef(), Writer);
+
+
+	//save json to file
+	FString FilePath = FPaths::ProjectSavedDir() / TEXT("MyData.json");
+
+	FFileHelper::SaveStringToFile(OutputString, *FilePath);
+}
+
+void ADataCollector::Temp()
+{
 	UWorld* World = GetWorld();
 
 	for (TActorIterator<ARoomBase> ItActor(World); ItActor; ++ItActor)
@@ -47,17 +88,33 @@ void ADataCollector::BeginPlay()
 			FCollisionQueryParams Params;
 			Params.AddIgnoredActor(*ItActor);
 
-			bool bHit = GetWorld()->LineTraceSingleByChannel(Hit, Start, End, ECC_Visibility, Params);
+			bool bHit = World->LineTraceSingleByChannel(Hit, Start, End, ECC_Visibility, Params);
 
 			if (bHit)
 			{
 				UE_LOG(LogTemp, Log, TEXT("Hit %s at ^s"), *Hit.GetActor()->GetName(), *Hit.ImpactPoint.ToString());
-				DrawDebugLine(GetWorld(), Start, End, FColor::Green, true, 100.0f, 0, 1.5f);
+				DrawDebugLine(World, Start, End, FColor::Green, true, 100.0f, 0, 1.5f);
 			}
 			else
-				DrawDebugLine(GetWorld(), Start, End, FColor::Red, true, 100.0f, 0, 1.5f);
-			
+				DrawDebugLine(World, Start, End, FColor::Red, true, 100.0f, 0, 1.5f);
+
 		}
-		
+
 	}
+}
+
+TArray<TSharedPtr<FJsonValue>> ActorsToJsonArray(const TArray<AActor*>& Actors)
+{
+	TArray<TSharedPtr<FJsonValue>> JsonArray;
+
+	for (AActor* Actor : Actors)
+	{
+		if (!Actor) continue;
+
+		JsonArray.Add(
+			MakeShared<FJsonValueString>(Actor->GetPathName())
+		);
+	}
+
+	return JsonArray;
 }

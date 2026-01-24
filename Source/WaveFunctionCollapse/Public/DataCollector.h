@@ -23,5 +23,5 @@ protected:
 
 public:	
 	
-
+	void Temp();
 };
