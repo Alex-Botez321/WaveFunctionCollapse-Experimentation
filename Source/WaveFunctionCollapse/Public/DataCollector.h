@@ -25,3 +25,24 @@ public:
 	
 	void Temp();
 };
+
+USTRUCT(BlueprintType, Category = "JsonTest")
+struct FJsonTest
+{
+	GENERATED_BODY()
+	//ensure UPROPERTY is added
+	//Unreal ignores fields which lack it
+	//work around lack of 2D array
+
+	UPROPERTY()
+	TSubclassOf<ARoomBase> CurrentBP;
+
+	UPROPERTY()
+	TArray<TSubclassOf<ARoomBase>> Forward;
+	UPROPERTY()
+	TArray<TSubclassOf<ARoomBase>> Back;
+	UPROPERTY()
+	TArray<TSubclassOf<ARoomBase>> Left;
+	UPROPERTY()
+	TArray<TSubclassOf<ARoomBase>> Right;
+};

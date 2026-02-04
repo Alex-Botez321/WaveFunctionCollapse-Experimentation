@@ -13,6 +13,7 @@
 #include "Serialization/JsonSerializer.h"
 #include "Misc/FileHelper.h"
 #include "Misc/Paths.h"
+#include "JsonObjectConverter.h"
 
 // Sets default values
 ADataCollector::ADataCollector()
@@ -30,19 +31,63 @@ void ADataCollector::BeginPlay()
 	//create json structure in memory
 	TSharedPtr<FJsonObject> RootObject = MakeShared<FJsonObject>();
 
-	RootObject->SetStringField(TEXT("ProjectName"), TEXT("MyUE5Game"));
-	RootObject->SetNumberField(TEXT("Version"), 1);
-	RootObject->SetBoolField(TEXT("bIsDemo"), true);
+	UWorld* World = GetWorld();
 
-	TArray<int> Test;
-	Test.SetNum(4);
-	Test[0] = 0;
-	Test[1] = 1;
-	Test[2] = 2;
-	Test[3] = 3;
+	TArray<FJsonTest> DataArray;
 
-	RootObject->SetArrayField(TEXT("Array"), TArray<TSharedPtr<FJsonValue>>(Test));
+	for (TActorIterator<ARoomBase> ItActor(World); ItActor; ++ItActor)
+	{
+		UE_LOG(LogTemp, Log, TEXT("[%hs]: found simple actor: %s"), __FUNCTION__, *ItActor->GetName());
+
+		FVector Start = ItActor->GetActorLocation();
+		float Distance = 300.0f;
+
+		FJsonTest Test;
+
+		Test.CurrentBP = ItActor->GetClass();
+
+		TArray<FVector> Directions;
+		Directions.SetNum(4);
+
+		Directions[0] = ItActor->GetActorForwardVector();
+		Directions[1] = -ItActor->GetActorForwardVector();
+		Directions[2] = ItActor->GetActorRightVector();
+		Directions[3] = -ItActor->GetActorRightVector();
+
+		for (int i = 0; i < 4; i++)
+		{
+			Directions[i].Normalize();
+
+			FVector End = Start + (Directions[i] * Distance);
+
+			FHitResult Hit;
+
+			FCollisionQueryParams Params;
+			Params.AddIgnoredActor(*ItActor);
+
+			bool bHit = World->LineTraceSingleByChannel(Hit, Start, End, ECC_Visibility, Params);
+
+			if (bHit)
+			{
+				UE_LOG(LogTemp, Log, TEXT("Hit %s at ^s"), *Hit.GetActor()->GetName(), *Hit.ImpactPoint.ToString());
+				DrawDebugLine(World, Start, End, FColor::Green, true, 100.0f, 0, 1.5f);
+				Test.Forward.Add(Hit.GetActor()->GetClass());
+				DataArray.Add(Test);
+			}
+			else
+				DrawDebugLine(World, Start, End, FColor::Red, true, 100.0f, 0, 1.5f);
+
+		}
+	}
 	
+	for (FJsonTest& Item : DataArray)
+	{
+		TArray<TSharedPtr<FJsonValue>> JsonArray;
+		TSharedPtr<FJsonObject> JsonVariant = MakeShared<FJsonObject>();
+		FJsonObjectConverter::UStructToJsonObject(FJsonTest::StaticStruct(), &Item, JsonVariant.ToSharedRef(), 0, 0);
+		JsonArray.Add(MakeShared<FJsonValueObject>(JsonVariant));
+		RootObject->SetArrayField(Item.CurrentBP->GetName(), JsonArray);
+	}
 
 	//create json valid text
 	FString OutputString;
@@ -101,20 +146,4 @@ void ADataCollector::Temp()
 		}
 
 	}
-}
-
-TArray<TSharedPtr<FJsonValue>> ActorsToJsonArray(const TArray<AActor*>& Actors)
-{
-	TArray<TSharedPtr<FJsonValue>> JsonArray;
-
-	for (AActor* Actor : Actors)
-	{
-		if (!Actor) continue;
-
-		JsonArray.Add(
-			MakeShared<FJsonValueString>(Actor->GetPathName())
-		);
-	}
-
-	return JsonArray;
 }
