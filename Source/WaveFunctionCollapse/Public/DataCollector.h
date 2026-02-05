@@ -21,13 +21,14 @@ protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
+	float Distance;
+
 public:	
 	
-	void Temp();
 };
 
 USTRUCT(BlueprintType, Category = "JsonTest")
-struct FJsonTest
+struct FRoomData
 {
 	GENERATED_BODY()
 	//ensure UPROPERTY is added
@@ -35,7 +36,7 @@ struct FJsonTest
 	//work around lack of 2D array
 
 	UPROPERTY()
-	TSubclassOf<ARoomBase> CurrentBP;
+	TSubclassOf<ARoomBase> RoomClass;
 
 	UPROPERTY()
 	TArray<TSubclassOf<ARoomBase>> Forward;
