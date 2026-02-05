@@ -23,6 +23,7 @@ protected:
 
 	float Distance;
 
+	TArray<FRoomData> RoomsData;
 public:	
 	
 };
@@ -46,4 +47,10 @@ struct FRoomData
 	TArray<TSubclassOf<ARoomBase>> Left;
 	UPROPERTY()
 	TArray<TSubclassOf<ARoomBase>> Right;
+
+	//needed for Tarray.find to work
+	bool operator==(const FRoomData& Other) const
+	{
+		return RoomClass == Other.RoomClass;
+	}
 };

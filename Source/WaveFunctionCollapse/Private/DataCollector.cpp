@@ -34,16 +34,25 @@ void ADataCollector::BeginPlay()
 
 	UWorld* World = GetWorld();
 
-	TArray<FRoomData> RoomsArray;
-
 	for (TActorIterator<ARoomBase> ItActor(World); ItActor; ++ItActor)
 	{
 		UE_LOG(LogTemp, Log, TEXT("[%hs]: found simple actor: %s"), __FUNCTION__, *ItActor->GetName());
 
 		FVector Start = ItActor->GetActorLocation();
 
-		FRoomData Room;
-		Room.RoomClass = ItActor->GetClass();
+		FRoomData CurrentRoom;
+		CurrentRoom.RoomClass = ItActor->GetClass();
+		
+		TArray<TArray<TSubclassOf<ARoomBase>>> RoomAdjacent;
+		RoomAdjacent.SetNum(4);
+		int32 Index = RoomsData.Find(CurrentRoom);
+		if (Index != INDEX_NONE)
+		{
+			RoomAdjacent[0].Append(RoomsData[Index].Forward);
+			RoomAdjacent[1].Append(RoomsData[Index].Back);
+			RoomAdjacent[2].Append(RoomsData[Index].Left);
+			RoomAdjacent[3].Append(RoomsData[Index].Right);
+		}
 
 		TArray<FVector> Direction;
 		Direction.SetNum(4);
@@ -70,16 +79,45 @@ void ADataCollector::BeginPlay()
 			{
 				UE_LOG(LogTemp, Log, TEXT("Hit %s at ^s"), *Hit.GetActor()->GetName(), *Hit.ImpactPoint.ToString());
 				DrawDebugLine(World, Start, End, FColor::Green, true, 100.0f, 0, 1.5f);
-				Room.Forward.Add(Hit.GetActor()->GetClass());
-				RoomsArray.Add(Room);
+
+				bool bRommExists = RoomAdjacent[i].Contains(Hit.GetActor()->GetClass());
+				if (!bRommExists)
+				{
+					RoomAdjacent[i].Add(Hit.GetActor()->GetClass());
+				}
 			}
 			else
 				DrawDebugLine(World, Start, End, FColor::Red, true, 100.0f, 0, 1.5f);
 
 		}
+
+		if (Index != INDEX_NONE)
+		{
+			//To Do: find better way to work around ue5 2d array limitation to remove the need to constantly empty arrays.
+			RoomsData[Index].Forward.Empty();
+			RoomsData[Index].Back.Empty();
+			RoomsData[Index].Left.Empty();
+			RoomsData[Index].Right.Empty();
+
+			RoomsData[Index].Forward.Append(RoomAdjacent[0]);
+			RoomsData[Index].Back.Append(RoomAdjacent[1]);
+			RoomsData[Index].Left.Append(RoomAdjacent[2]);
+			RoomsData[Index].Right.Append(RoomAdjacent[3]);
+		}
+		else
+		{
+			CurrentRoom.Forward.Append(RoomAdjacent[0]);
+			CurrentRoom.Back.Append(RoomAdjacent[1]);
+			CurrentRoom.Left.Append(RoomAdjacent[2]);
+			CurrentRoom.Right.Append(RoomAdjacent[3]);
+			RoomsData.Add(CurrentRoom);
+		}
+		
 	}
 	
-	for (FRoomData& Room : RoomsArray)
+
+
+	for (FRoomData& Room : RoomsData)
 	{
 		TArray<TSharedPtr<FJsonValue>> JsonArray;
 		TSharedPtr<FJsonObject> JsonVariant = MakeShared<FJsonObject>();
