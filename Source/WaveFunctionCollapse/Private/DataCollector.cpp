@@ -33,8 +33,6 @@ void ADataCollector::BeginPlay()
 
 	for (TActorIterator<ARoomBase> ItActor(World); ItActor; ++ItActor)
 	{
-		UE_LOG(LogTemp, Log, TEXT("[%hs]: found simple actor: %s"), __FUNCTION__, *ItActor->GetName());
-
 		FVector Start = ItActor->GetActorLocation();
 
 		FRoomData CurrentRoom;
@@ -85,8 +83,7 @@ void ADataCollector::BeginPlay()
 				UE_LOG(LogTemp, Log, TEXT("Hit %s at ^s"), *Hit.GetActor()->GetName(), *Hit.ImpactPoint.ToString());
 				DrawDebugLine(World, Start, End, FColor::Green, true, 100.0f, 0, 1.5f);
 
-				bool bRommExists = RoomAdjacent[i].Contains(HitClass);
-				if (!bRommExists)
+				if (!RoomAdjacent[i].Contains(HitClass))
 				{
 					RoomAdjacent[i].Add(HitClass);
 				}

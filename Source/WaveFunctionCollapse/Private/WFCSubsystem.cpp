@@ -1,5 +1,8 @@
 #include "WFCSubsystem.h"
 #include "RoomBase.h"
+#include "Engine/World.h"
+#include "Engine/Engine.h"
+#include "ObjectTrace.h"
 
 //DEFINE_LOG_CATEGORY(WFCWorldSubSystem);
 
@@ -36,12 +39,39 @@ void UWFCSubsystem::CollapseNeighboursOfCell(int x, int y)
 	//recursion to check subsequent neighbours if there was any collapse
 }
 
+bool UWFCSubsystem::ShouldCreateSubsystem(UObject* Outer) const 
+{
+	UWorld* World = Cast<UWorld>(Outer);
+	if (World)
+	{
+		/*for (const TSoftObjectPtr<UWorld>& WorldAsset : AllowedWorlds)
+		{
+			if (WorldAsset.GetAssetName() == World->GetName())
+			{
+				return true;
+			}
+		}*/
+
+		//Lambda function essentially same as the above
+		//simply using Contains() does not work as UWorld is not a TSoftObjectPtr
+		return AllowedWorlds.ContainsByPredicate([World](const TSoftObjectPtr<UWorld>& WorldAsset)
+			{
+				return WorldAsset.GetAssetName() == World->GetName();
+			});
+	}
+	return false;
+}
+
 void UWFCSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 {
-	//UE_LOGFMT(WFCWorldSubSystem, Log, "WFCWorldSubSystem::Initialize");
+	Super::Initialize(Collection);
+	UE_LOG(LogTemp, Warning, TEXT("WFCWorldSubSystem::Initialize"));
 }
 
 void UWFCSubsystem::Deinitialize()
 {
-	//UE_LOGFMT(WFCWorldSubSystem, Log, "WFCWorldSubSystem::Deinitialize");
+	UE_LOG(LogTemp, Warning, TEXT("WFCWorldSubSystem::Deinitialize"));
+
+	Super::Deinitialize();
+
 }

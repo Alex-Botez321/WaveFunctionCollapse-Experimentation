@@ -8,6 +8,8 @@
 #include "WFCSubsystem.generated.h"
 
 class ARoomBase;
+class UWFCSubsystem;
+
 
 //DECLARE_LOG_CATEGORY_EXTERN(WFCWorldSubSystem, Log, All);
 
@@ -29,6 +31,11 @@ public:
     TArray<TArray<FTileData>> Grid;
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Grid Config")
     int GridSize;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    TArray<TSoftObjectPtr<UWorld>> AllowedWorlds;
+
+    virtual bool ShouldCreateSubsystem(UObject* Outer) const override;
 
     virtual void Initialize(FSubsystemCollectionBase& Collection) override;
     virtual void Deinitialize() override;
