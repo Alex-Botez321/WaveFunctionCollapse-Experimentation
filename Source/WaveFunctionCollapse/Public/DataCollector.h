@@ -23,6 +23,8 @@ protected:
 
 	float Distance;
 
+	const int32 DirectionCount = 4;
+
 	TArray<FRoomData> RoomsData;
 public:	
 	

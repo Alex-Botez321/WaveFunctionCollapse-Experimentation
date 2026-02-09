@@ -29,9 +29,6 @@ void ADataCollector::BeginPlay()
 {
 	Super::BeginPlay();
 
-	//create json structure in memory
-	TSharedPtr<FJsonObject> JsonObject = MakeShared<FJsonObject>();
-
 	UWorld* World = GetWorld();
 
 	for (TActorIterator<ARoomBase> ItActor(World); ItActor; ++ItActor)
@@ -44,7 +41,7 @@ void ADataCollector::BeginPlay()
 		CurrentRoom.RoomClass = ItActor->GetClass();
 		
 		TArray<TArray<TSubclassOf<ARoomBase>>> RoomAdjacent;
-		RoomAdjacent.SetNum(4);
+		RoomAdjacent.SetNum(DirectionCount);
 		int32 Index = RoomsData.Find(CurrentRoom);
 		if (Index != INDEX_NONE)
 		{
@@ -55,14 +52,14 @@ void ADataCollector::BeginPlay()
 		}
 
 		TArray<FVector> Direction;
-		Direction.SetNum(4);
+		Direction.SetNum(DirectionCount);
 
 		Direction[0] = ItActor->GetActorForwardVector();
 		Direction[1] = -ItActor->GetActorForwardVector();
 		Direction[2] = ItActor->GetActorRightVector();
 		Direction[3] = -ItActor->GetActorRightVector();
 
-		for (int i = 0; i < 4; i++)
+		for (int i = 0; i < DirectionCount; i++)
 		{
 			Direction[i].Normalize();
 
@@ -77,20 +74,30 @@ void ADataCollector::BeginPlay()
 
 			if (bHit)
 			{
+				TSubclassOf<ARoomBase> HitClass = Hit.GetActor()->GetClass();
+
+				if (!HitClass->IsChildOf(ARoomBase::StaticClass()))
+				{
+					UE_LOG(LogTemp, Warning, TEXT("Hit %s at ^s, not subclass of ARoomBase"), *Hit.GetActor()->GetName(), *Hit.ImpactPoint.ToString());
+					continue;
+				}
+
 				UE_LOG(LogTemp, Log, TEXT("Hit %s at ^s"), *Hit.GetActor()->GetName(), *Hit.ImpactPoint.ToString());
 				DrawDebugLine(World, Start, End, FColor::Green, true, 100.0f, 0, 1.5f);
 
-				bool bRommExists = RoomAdjacent[i].Contains(Hit.GetActor()->GetClass());
+				bool bRommExists = RoomAdjacent[i].Contains(HitClass);
 				if (!bRommExists)
 				{
-					RoomAdjacent[i].Add(Hit.GetActor()->GetClass());
+					RoomAdjacent[i].Add(HitClass);
 				}
+				continue;
 			}
-			else
-				DrawDebugLine(World, Start, End, FColor::Red, true, 100.0f, 0, 1.5f);
+
+			DrawDebugLine(World, Start, End, FColor::Red, true, 100.0f, 0, 1.5f);
 
 		}
 
+		//addit the data of the current room to the data array.
 		if (Index != INDEX_NONE)
 		{
 			//To Do: find better way to work around ue5 2d array limitation to remove the need to constantly empty arrays.
@@ -114,9 +121,9 @@ void ADataCollector::BeginPlay()
 		}
 		
 	}
-	
 
-
+	//create json structure in memory
+	TSharedPtr<FJsonObject> JsonObject = MakeShared<FJsonObject>();
 	for (FRoomData& Room : RoomsData)
 	{
 		TArray<TSharedPtr<FJsonValue>> JsonArray;
