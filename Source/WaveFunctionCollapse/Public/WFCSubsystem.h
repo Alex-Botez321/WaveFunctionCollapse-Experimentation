@@ -4,14 +4,13 @@
 
 #include "CoreMinimal.h"
 #include "Subsystems/WorldSubsystem.h"
+#include "DataCollector.h"
 #include "Logging/StructuredLog.h"
 #include "WFCSubsystem.generated.h"
 
 class ARoomBase;
 class UWFCSubsystem;
-
-
-//DECLARE_LOG_CATEGORY_EXTERN(WFCWorldSubSystem, Log, All);
+class ADataCollector;
 
 UCLASS(Abstract, Blueprintable)
 class WAVEFUNCTIONCOLLAPSE_API UWFCSubsystem : public UWorldSubsystem
@@ -28,14 +27,21 @@ public:
     UFUNCTION(BlueprintCallable)
     void CollapseNeighboursOfCell(int x, int y);
 
+    UFUNCTION()
+    void LoadAdjancencyRules();
+
+    TMap<FString, FRoomData> AdjacencyRules;
+
     TArray<TArray<FTileData>> Grid;
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Grid Config")
     int GridSize;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite)
-    TArray<TSoftObjectPtr<UWorld>> AllowedWorlds;
+    TArray<TSoftObjectPtr<UWorld>> AllowedWorlds; //TSoftObjectPointer is similar to TSubClassOf in this case
 
     virtual bool ShouldCreateSubsystem(UObject* Outer) const override;
+
+    virtual void OnWorldBeginPlay(UWorld& InWorld) override;
 
     virtual void Initialize(FSubsystemCollectionBase& Collection) override;
     virtual void Deinitialize() override;
@@ -46,15 +52,9 @@ struct FTileData
 {
     GENERATED_USTRUCT_BODY()
 
-    TArray<ARoomBase>* AvailableOptions;
+    TArray<ARoomBase>* AvailableRooms;
 
     int Entropy;
 
     bool IsCollapsed = false;
 };
-
-/*data asset which
-* Holds all tiles
-* holds a rotation quat
-* holds tiles that can be adjacent
-*/

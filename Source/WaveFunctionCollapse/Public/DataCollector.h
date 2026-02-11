@@ -30,14 +30,15 @@ public:
 	
 };
 
-USTRUCT(BlueprintType, Category = "JsonTest")
+USTRUCT(BlueprintType, Category = "RoomData")
 struct FRoomData
 {
 	GENERATED_BODY()
+
 	//ensure UPROPERTY is added
 	//Unreal ignores fields which lack it
 	//work around lack of 2D array
-
+	
 	UPROPERTY()
 	TSubclassOf<ARoomBase> RoomClass;
 

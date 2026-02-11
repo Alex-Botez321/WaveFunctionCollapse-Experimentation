@@ -4,7 +4,15 @@
 #include "Engine/Engine.h"
 #include "ObjectTrace.h"
 
-//DEFINE_LOG_CATEGORY(WFCWorldSubSystem);
+#include "DataCollector.h"
+
+//JSON includes
+#include "Dom/JsonObject.h"
+#include "Serialization/JsonWriter.h"
+#include "Serialization/JsonSerializer.h"
+#include "Misc/FileHelper.h"
+#include "Misc/Paths.h"
+#include "JsonObjectConverter.h"
 
 UWFCSubsystem::UWFCSubsystem()
 {
@@ -39,7 +47,45 @@ void UWFCSubsystem::CollapseNeighboursOfCell(int x, int y)
 	//recursion to check subsequent neighbours if there was any collapse
 }
 
-bool UWFCSubsystem::ShouldCreateSubsystem(UObject* Outer) const 
+void UWFCSubsystem::LoadAdjancencyRules()
+{
+	FString FilePath = FPaths::ProjectSavedDir() / TEXT("MyData.json");
+
+	FString JsonString;
+	if (!FFileHelper::LoadFileToString(JsonString, *FilePath))
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Json could not be accessed"));
+		return;
+	}
+
+	TSharedPtr<FJsonObject> JsonObject;
+	if (!FJsonSerializer::Deserialize(TJsonReaderFactory<>::Create(JsonString), JsonObject))
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Json could not be parsed into Json object"));
+		return;
+	}
+
+	for (auto& RoomType : JsonObject->Values)
+	{
+		FString RoomName = RoomType.Key;
+
+		TArray<TSharedPtr<FJsonValue>> RoomArray = RoomType.Value->AsArray();
+
+		FRoomData RoomData;
+		if (FJsonObjectConverter::JsonObjectToUStruct(RoomArray[0]->AsObject().ToSharedRef(), &RoomData, 0, 0))
+		{
+			AdjacencyRules.Add(RoomName, RoomData);
+		}
+	}
+	UE_LOG(LogTemp, Log, TEXT("Loaded %d room types"), AdjacencyRules.Num());
+}
+
+void UWFCSubsystem::OnWorldBeginPlay(UWorld& InWorld)
+{
+	LoadAdjancencyRules();
+}
+
+bool UWFCSubsystem::ShouldCreateSubsystem(UObject* Outer) const
 {
 	UWorld* World = Cast<UWorld>(Outer);
 	if (World)
@@ -52,7 +98,7 @@ bool UWFCSubsystem::ShouldCreateSubsystem(UObject* Outer) const
 			}
 		}*/
 
-		//Lambda function essentially same as the above
+		//Lambda function same as the above
 		//simply using Contains() does not work as UWorld is not a TSoftObjectPtr
 		return AllowedWorlds.ContainsByPredicate([World](const TSoftObjectPtr<UWorld>& WorldAsset)
 			{

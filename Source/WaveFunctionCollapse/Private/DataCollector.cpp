@@ -127,7 +127,7 @@ void ADataCollector::BeginPlay()
 		TSharedPtr<FJsonObject> JsonVariant = MakeShared<FJsonObject>();
 		FJsonObjectConverter::UStructToJsonObject(FRoomData::StaticStruct(), &Room, JsonVariant.ToSharedRef(), 0, 0);
 		JsonArray.Add(MakeShared<FJsonValueObject>(JsonVariant));
-		JsonObject->SetArrayField(Room.RoomClass->GetName(), JsonArray);
+		JsonObject->SetArrayField(Room.RoomClass->GetPathName(), JsonArray);
 	}
 
 	//create json valid text
