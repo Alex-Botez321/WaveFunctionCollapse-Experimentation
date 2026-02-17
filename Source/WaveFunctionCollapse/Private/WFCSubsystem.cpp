@@ -14,32 +14,30 @@
 #include "Misc/Paths.h"
 #include "JsonObjectConverter.h"
 
+//World generation includes
+#include "Math/UnrealMathUtility.h"
+
 UWFCSubsystem::UWFCSubsystem()
 {
 	GridSize = 10;
-
-	Grid.SetNum(GridSize);
-
-	for (int x = 0; x < GridSize; x++)
-	{
-		Grid[x].SetNum(GridSize);
-		for (int y = 0; y < GridSize; y++)
-		{
-			//for (int i = 1; i < (int)UWFCTiles::Length - 1; i++) //x starts at 1 to avoid blank space
-			//{
-			//	Grid[x][y].AvailableOptions.Add((UWFCTiles)i);
-			//}
-		}
-	}
-
-	//Grid[GridSize * 0.5][GridSize * 0.5].AvailableOptions.Empty(); //TO DO: Replace with random position based on entropy
-	//Grid[GridSize * 0.5][GridSize * 0.5].AvailableOptions.Add(UWFCTiles::Plus);
-	//Grid[GridSize * 0.5][GridSize * 0.5].IsCollapsed = true;
 }
 
 void UWFCSubsystem::AlgorithmSolver()
 {
+	int32 StartPoint = GridSize * 0.5f;
+	FString StartTile = Grid[StartPoint][StartPoint].AvailableRoomsKeys[0];
+	Grid[StartPoint][StartPoint].AvailableRoomsKeys.Empty();
+	Grid[StartPoint][StartPoint].AvailableRoomsKeys.Add(StartTile);
+	Grid[StartPoint][StartPoint].IsCollapsed = true;
 	
+	for (int x = 0; x < GridSize; x++)
+	{
+		for (int y = 0; y < GridSize; y++)
+		{
+
+		}
+	}
+
 }
 
 void UWFCSubsystem::CollapseNeighboursOfCell(int x, int y)
@@ -47,7 +45,7 @@ void UWFCSubsystem::CollapseNeighboursOfCell(int x, int y)
 	//recursion to check subsequent neighbours if there was any collapse
 }
 
-void UWFCSubsystem::LoadAdjancencyRules()
+void UWFCSubsystem::LoadAdjacencyRules()
 {
 	FString FilePath = FPaths::ProjectSavedDir() / TEXT("MyData.json");
 
@@ -80,9 +78,50 @@ void UWFCSubsystem::LoadAdjancencyRules()
 	UE_LOG(LogTemp, Log, TEXT("Loaded %d room types"), AdjacencyRules.Num());
 }
 
+void UWFCSubsystem::PopulateGrid()
+{
+	Grid.SetNum(GridSize);
+
+	for (int x = 0; x < GridSize; x++)
+	{
+		Grid[x].SetNum(GridSize);
+		for (int y = 0; y < GridSize; y++)
+		{
+			for (TPair<FString, FRoomData>& Pair : AdjacencyRules)
+			{
+				Grid[x][y].AvailableRoomsKeys.Add(Pair.Key);
+			}
+		}
+	}
+}
+
+bool UWFCSubsystem::IsOutOfBounds()
+{
+	return true;
+}
+
+bool UWFCSubsystem::IsGridFull()
+{
+	for (int x = 0; x < GridSize; x++)
+	{
+		for (int y = 0; y < GridSize; y++)
+		{
+			if (Grid[x][y].AvailableRoomsKeys.Num() < 1)
+				return false;
+		}
+	}
+	return true;
+}
+
+void UWFCSubsystem::SpawnGrid()
+{
+}
+
 void UWFCSubsystem::OnWorldBeginPlay(UWorld& InWorld)
 {
-	LoadAdjancencyRules();
+	LoadAdjacencyRules();
+	PopulateGrid();
+	AlgorithmSolver();
 }
 
 bool UWFCSubsystem::ShouldCreateSubsystem(UObject* Outer) const

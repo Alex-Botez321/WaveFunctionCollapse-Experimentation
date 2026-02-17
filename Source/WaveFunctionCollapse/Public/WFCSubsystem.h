@@ -28,11 +28,24 @@ public:
     void CollapseNeighboursOfCell(int x, int y);
 
     UFUNCTION()
-    void LoadAdjancencyRules();
+    void LoadAdjacencyRules();
+
+    UFUNCTION()
+    void PopulateGrid();
+
+    UFUNCTION()
+    void SpawnGrid();
+
+    UFUNCTION()
+    bool IsOutOfBounds();
+
+    UFUNCTION()
+    bool IsGridFull();
 
     TMap<FString, FRoomData> AdjacencyRules;
 
     TArray<TArray<FTileData>> Grid;
+
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Grid Config")
     int GridSize;
 
@@ -52,7 +65,7 @@ struct FTileData
 {
     GENERATED_USTRUCT_BODY()
 
-    TArray<ARoomBase>* AvailableRooms;
+    TArray<FString> AvailableRoomsKeys;
 
     int Entropy;
 
