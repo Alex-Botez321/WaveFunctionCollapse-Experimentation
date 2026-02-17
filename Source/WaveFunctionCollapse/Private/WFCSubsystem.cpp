@@ -24,6 +24,7 @@ UWFCSubsystem::UWFCSubsystem()
 
 void UWFCSubsystem::AlgorithmSolver()
 {
+	//temporary start point for easier testing
 	int32 StartPoint = GridSize * 0.5f;
 	FString StartTile = Grid[StartPoint][StartPoint].AvailableRoomsKeys[0];
 	Grid[StartPoint][StartPoint].AvailableRoomsKeys.Empty();
@@ -40,9 +41,66 @@ void UWFCSubsystem::AlgorithmSolver()
 
 }
 
-void UWFCSubsystem::CollapseNeighboursOfCell(int x, int y)
+void UWFCSubsystem::CollapseNeighboursOfCell(int32 x, int32 y)
 {
-	//recursion to check subsequent neighbours if there was any collapse
+	TArray<TArray<TSubclassOf<ARoomBase>>> NeighborsInDirection;
+	FRoomData CurrentRoom;
+
+	TArray<FVector2D> Direction;
+	Direction.SetNum(NeighborsInDirection.Num());
+	Direction.Add(FVector2D(1, 0));
+	Direction.Add(FVector2D(-1, 0));
+	Direction.Add(FVector2D(0, -1));
+	Direction.Add(FVector2D(0, 1));
+	
+	if (AdjacencyRules.Contains(Grid[x][y].AvailableRoomsKeys[0]))
+	{
+		CurrentRoom = AdjacencyRules[Grid[x][y].AvailableRoomsKeys[0]];
+		NeighborsInDirection[0].Append(CurrentRoom.Forward);
+		NeighborsInDirection[1].Append(CurrentRoom.Back);
+		NeighborsInDirection[2].Append(CurrentRoom.Left);
+		NeighborsInDirection[3].Append(CurrentRoom.Right);
+	}
+
+	for (int i = 0; i < Direction.Num(); i++)
+	{
+		Grid[Direction[i].X][Direction[i].Y]
+	}
+}
+
+bool UWFCSubsystem::IsOutOfBounds(int32 x, int32 y)
+{
+	return true;
+}
+
+bool UWFCSubsystem::IsGridFull()
+{
+	for (int x = 0; x < GridSize; x++)
+	{
+		for (int y = 0; y < GridSize; y++)
+		{
+			if (Grid[x][y].AvailableRoomsKeys.Num() < 1)
+				return false;
+		}
+	}
+	return true;
+}
+
+void UWFCSubsystem::PopulateGrid()
+{
+	Grid.SetNum(GridSize);
+
+	for (int x = 0; x < GridSize; x++)
+	{
+		Grid[x].SetNum(GridSize);
+		for (int y = 0; y < GridSize; y++)
+		{
+			for (TPair<FString, FRoomData>& Pair : AdjacencyRules)
+			{
+				Grid[x][y].AvailableRoomsKeys.Add(Pair.Key);
+			}
+		}
+	}
 }
 
 void UWFCSubsystem::LoadAdjacencyRules()
@@ -76,41 +134,6 @@ void UWFCSubsystem::LoadAdjacencyRules()
 		}
 	}
 	UE_LOG(LogTemp, Log, TEXT("Loaded %d room types"), AdjacencyRules.Num());
-}
-
-void UWFCSubsystem::PopulateGrid()
-{
-	Grid.SetNum(GridSize);
-
-	for (int x = 0; x < GridSize; x++)
-	{
-		Grid[x].SetNum(GridSize);
-		for (int y = 0; y < GridSize; y++)
-		{
-			for (TPair<FString, FRoomData>& Pair : AdjacencyRules)
-			{
-				Grid[x][y].AvailableRoomsKeys.Add(Pair.Key);
-			}
-		}
-	}
-}
-
-bool UWFCSubsystem::IsOutOfBounds()
-{
-	return true;
-}
-
-bool UWFCSubsystem::IsGridFull()
-{
-	for (int x = 0; x < GridSize; x++)
-	{
-		for (int y = 0; y < GridSize; y++)
-		{
-			if (Grid[x][y].AvailableRoomsKeys.Num() < 1)
-				return false;
-		}
-	}
-	return true;
 }
 
 void UWFCSubsystem::SpawnGrid()

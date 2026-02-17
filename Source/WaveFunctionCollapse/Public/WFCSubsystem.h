@@ -25,7 +25,7 @@ public:
     void AlgorithmSolver();
 
     UFUNCTION(BlueprintCallable)
-    void CollapseNeighboursOfCell(int x, int y);
+    void CollapseNeighboursOfCell(int32 x, int32 y);
 
     UFUNCTION()
     void LoadAdjacencyRules();
@@ -37,7 +37,7 @@ public:
     void SpawnGrid();
 
     UFUNCTION()
-    bool IsOutOfBounds();
+    bool IsOutOfBounds(int32 x, int32 y);
 
     UFUNCTION()
     bool IsGridFull();
