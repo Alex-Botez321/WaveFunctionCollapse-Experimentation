@@ -19,58 +19,101 @@
 
 UWFCSubsystem::UWFCSubsystem()
 {
-	GridSize = 10;
+	GridSize = 4;
 }
 
 void UWFCSubsystem::AlgorithmSolver()
 {
 	//temporary start point for easier testing
 	int32 StartPoint = GridSize * 0.5f;
-	FString StartTile = Grid[StartPoint][StartPoint].AvailableRoomsKeys[0];
-	Grid[StartPoint][StartPoint].AvailableRoomsKeys.Empty();
-	Grid[StartPoint][StartPoint].AvailableRoomsKeys.Add(StartTile);
-	Grid[StartPoint][StartPoint].IsCollapsed = true;
+	TSubclassOf<ARoomBase> StartTile = Grid[StartPoint][StartPoint].AvailableRoomKeys[0];
+	Grid[StartPoint][StartPoint].AvailableRoomKeys.Empty();
+	Grid[StartPoint][StartPoint].AvailableRoomKeys.Add(StartTile);
+	Grid[StartPoint][StartPoint].IsFullyCollapsed = true;
 	
-	for (int x = 0; x < GridSize; x++)
+	int Iterator = 0;
+	int LoopLimit = 1000;
+	while (!IsGridFull() || Iterator<LoopLimit)
 	{
-		for (int y = 0; y < GridSize; y++)
+		for (int x = 0; x < GridSize; x++)
 		{
-
+			for (int y = 0; y < GridSize; y++)
+			{
+				CollapseCell(x, y);
+			}
 		}
+		if (Iterator > LoopLimit)
+			break;
+		Iterator++;
 	}
-
 }
 
-void UWFCSubsystem::CollapseNeighboursOfCell(int32 x, int32 y)
+void UWFCSubsystem::CollapseCell(int32 x, int32 y)
 {
-	TArray<TArray<TSubclassOf<ARoomBase>>> NeighborsInDirection;
-	FRoomData CurrentRoom;
+	//if (Grid[x][y].IsFullyCollapsed)
+	//	return;
+
+	bool HasBeenCollapsed = false;
 
 	TArray<FVector2D> Direction;
-	Direction.SetNum(NeighborsInDirection.Num());
-	Direction.Add(FVector2D(1, 0));
-	Direction.Add(FVector2D(-1, 0));
-	Direction.Add(FVector2D(0, -1));
-	Direction.Add(FVector2D(0, 1));
+	Direction.SetNum(4);
+	Direction[0] = (FVector2D(-1, 0));
+	Direction[1] = (FVector2D(1, 0));
+	Direction[2] = (FVector2D(0, 1));
+	Direction[3] = (FVector2D(0, -1));
 	
-	if (AdjacencyRules.Contains(Grid[x][y].AvailableRoomsKeys[0]))
-	{
-		CurrentRoom = AdjacencyRules[Grid[x][y].AvailableRoomsKeys[0]];
-		NeighborsInDirection[0].Append(CurrentRoom.Forward);
-		NeighborsInDirection[1].Append(CurrentRoom.Back);
-		NeighborsInDirection[2].Append(CurrentRoom.Left);
-		NeighborsInDirection[3].Append(CurrentRoom.Right);
-	}
-
 	for (int i = 0; i < Direction.Num(); i++)
 	{
-		Grid[Direction[i].X][Direction[i].Y]
-	}
-}
+		int32 NeighbourX = (int32)Direction[i].X + x;
+		int32 NeighbourY = (int32)Direction[i].Y + y;
 
-bool UWFCSubsystem::IsOutOfBounds(int32 x, int32 y)
-{
-	return true;
+		if (!Grid.IsValidIndex(NeighbourX) || !Grid[NeighbourX].IsValidIndex(NeighbourY))
+			continue;
+
+		if (Grid[NeighbourX][NeighbourY].AvailableRoomKeys.IsEmpty())
+		{
+			UE_LOG(LogTemp, Warning, TEXT("WFC Algorithm failed at position:  %d , %d "), NeighbourX, NeighbourY);
+			continue;
+		}
+
+		TArray<TSubclassOf<ARoomBase>> AvailableRooms;
+		for (TSubclassOf<ARoomBase> NeighbourRoomKey : Grid[NeighbourX][NeighbourY].AvailableRoomKeys)
+		{
+			for (TSubclassOf<ARoomBase> Key : AdjacencyRules[NeighbourRoomKey].Neighbours[i].Row)
+			{
+				if (AvailableRooms.Contains(Key))
+					continue;
+
+				AvailableRooms.Add(Key);
+			}
+		}
+
+		TArray<TSubclassOf<ARoomBase>> KeysToBeRemoved;
+		for (TSubclassOf<ARoomBase> RoomKey : Grid[x][y].AvailableRoomKeys)
+		{
+			if (AvailableRooms.Contains(RoomKey))
+				continue;
+
+			KeysToBeRemoved.Add(RoomKey);
+			HasBeenCollapsed = true;
+		}
+
+		for (TSubclassOf<ARoomBase> RoomKey : KeysToBeRemoved)
+		{
+			Grid[x][y].AvailableRoomKeys.Remove(RoomKey);
+		}
+		
+		if (Grid[x][y].AvailableRoomKeys.Num() == 1)
+			Grid[x][y].IsFullyCollapsed = true;
+		else if (Grid[x][y].AvailableRoomKeys.IsEmpty())
+			UE_LOG(LogTemp, Warning, TEXT("WFC Algorithm failed at position:  %d , %d "), (NeighbourX), (NeighbourY));
+
+
+		if (HasBeenCollapsed)
+		{
+			CollapseCell(NeighbourX, NeighbourY);
+		}
+	}
 }
 
 bool UWFCSubsystem::IsGridFull()
@@ -79,7 +122,7 @@ bool UWFCSubsystem::IsGridFull()
 	{
 		for (int y = 0; y < GridSize; y++)
 		{
-			if (Grid[x][y].AvailableRoomsKeys.Num() < 1)
+			if (!Grid[x][y].IsFullyCollapsed)
 				return false;
 		}
 	}
@@ -95,9 +138,9 @@ void UWFCSubsystem::PopulateGrid()
 		Grid[x].SetNum(GridSize);
 		for (int y = 0; y < GridSize; y++)
 		{
-			for (TPair<FString, FRoomData>& Pair : AdjacencyRules)
+			for (TPair<TSubclassOf<ARoomBase>, FRoomData>& Pair : AdjacencyRules)
 			{
-				Grid[x][y].AvailableRoomsKeys.Add(Pair.Key);
+				Grid[x][y].AvailableRoomKeys.Add(Pair.Key);
 			}
 		}
 	}
@@ -121,19 +164,29 @@ void UWFCSubsystem::LoadAdjacencyRules()
 		return;
 	}
 
-	for (auto& RoomType : JsonObject->Values)
+	for (auto& JsonRoomType : JsonObject->Values)
 	{
-		FString RoomName = RoomType.Key;
+		TSubclassOf<ARoomBase> RoomName = LoadClass<ARoomBase>(nullptr, *JsonRoomType.Key);;
 
-		TArray<TSharedPtr<FJsonValue>> RoomArray = RoomType.Value->AsArray();
+		TArray<TSharedPtr<FJsonValue>> RoomArray = JsonRoomType.Value->AsArray();
 
-		FRoomData RoomData;
+		FJSonRoomData RoomData;
 		if (FJsonObjectConverter::JsonObjectToUStruct(RoomArray[0]->AsObject().ToSharedRef(), &RoomData, 0, 0))
 		{
-			AdjacencyRules.Add(RoomName, RoomData);
+			FRoomData FormatedRoomData;
+			FormatedRoomData.RoomClass = RoomData.RoomClass;
+			FormatedRoomData.Neighbours.SetNum(4);
+			FormatedRoomData.Neighbours[0].Row.Append(RoomData.Forward);
+			FormatedRoomData.Neighbours[1].Row.Append(RoomData.Back);
+			FormatedRoomData.Neighbours[2].Row.Append(RoomData.Left);
+			FormatedRoomData.Neighbours[3].Row.Append(RoomData.Right);
+
+			AdjacencyRules.Add(RoomName, FormatedRoomData);
 		}
 	}
 	UE_LOG(LogTemp, Log, TEXT("Loaded %d room types"), AdjacencyRules.Num());
+
+
 }
 
 void UWFCSubsystem::SpawnGrid()

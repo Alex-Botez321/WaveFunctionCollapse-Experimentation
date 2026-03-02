@@ -35,7 +35,7 @@ void ADataCollector::BeginPlay()
 	{
 		FVector Start = ItActor->GetActorLocation();
 
-		FRoomData CurrentRoom;
+		FJSonRoomData CurrentRoom;
 		CurrentRoom.RoomClass = ItActor->GetClass();
 		
 		TArray<TArray<TSubclassOf<ARoomBase>>> RoomAdjacent;
@@ -121,11 +121,11 @@ void ADataCollector::BeginPlay()
 
 	//create json structure in memory
 	TSharedPtr<FJsonObject> JsonObject = MakeShared<FJsonObject>();
-	for (FRoomData& Room : RoomsData)
+	for (FJSonRoomData& Room : RoomsData)
 	{
 		TArray<TSharedPtr<FJsonValue>> JsonArray;
 		TSharedPtr<FJsonObject> JsonVariant = MakeShared<FJsonObject>();
-		FJsonObjectConverter::UStructToJsonObject(FRoomData::StaticStruct(), &Room, JsonVariant.ToSharedRef(), 0, 0);
+		FJsonObjectConverter::UStructToJsonObject(FJSonRoomData::StaticStruct(), &Room, JsonVariant.ToSharedRef(), 0, 0);
 		JsonArray.Add(MakeShared<FJsonValueObject>(JsonVariant));
 		JsonObject->SetArrayField(Room.RoomClass->GetPathName(), JsonArray);
 	}

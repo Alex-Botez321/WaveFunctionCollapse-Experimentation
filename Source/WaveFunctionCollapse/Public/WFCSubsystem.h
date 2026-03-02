@@ -4,13 +4,56 @@
 
 #include "CoreMinimal.h"
 #include "Subsystems/WorldSubsystem.h"
-#include "DataCollector.h"
 #include "Logging/StructuredLog.h"
+#include "RoomBase.h"
+#include "DataCollector.h"
 #include "WFCSubsystem.generated.h"
 
-class ARoomBase;
 class UWFCSubsystem;
 class ADataCollector;
+
+USTRUCT(BlueprintType)
+struct FNeighboursRow
+{
+    GENERATED_BODY()
+
+    UPROPERTY()
+    TArray<TSubclassOf<ARoomBase>> Row;
+};
+
+USTRUCT(BlueprintType, Category = "RoomData")
+struct FRoomData
+{
+    GENERATED_BODY()
+
+    //ensure UPROPERTY is added
+    //Unreal ignores fields which lack it
+    //work around lack of 2D array
+
+    UPROPERTY()
+    TSubclassOf<ARoomBase> RoomClass;
+
+    UPROPERTY()
+    TArray<FNeighboursRow> Neighbours;
+
+    //needed for Tarray.find to work
+    bool operator==(const FRoomData& Other) const
+    {
+        return RoomClass == Other.RoomClass;
+    }
+};
+
+USTRUCT(BlueprintType, Atomic)
+struct FTileData
+{
+    GENERATED_BODY()
+
+    TArray<TSubclassOf<ARoomBase>> AvailableRoomKeys;
+
+    int Entropy;
+
+    bool IsFullyCollapsed = false;
+};
 
 UCLASS(Abstract, Blueprintable)
 class WAVEFUNCTIONCOLLAPSE_API UWFCSubsystem : public UWorldSubsystem
@@ -25,7 +68,7 @@ public:
     void AlgorithmSolver();
 
     UFUNCTION(BlueprintCallable)
-    void CollapseNeighboursOfCell(int32 x, int32 y);
+    void CollapseCell(int32 x, int32 y);
 
     UFUNCTION()
     void LoadAdjacencyRules();
@@ -37,12 +80,9 @@ public:
     void SpawnGrid();
 
     UFUNCTION()
-    bool IsOutOfBounds(int32 x, int32 y);
-
-    UFUNCTION()
     bool IsGridFull();
 
-    TMap<FString, FRoomData> AdjacencyRules;
+    TMap<TSubclassOf<ARoomBase>, FRoomData> AdjacencyRules;
 
     TArray<TArray<FTileData>> Grid;
 
@@ -60,14 +100,3 @@ public:
     virtual void Deinitialize() override;
 };
 
-USTRUCT(BlueprintType, Atomic)
-struct FTileData
-{
-    GENERATED_USTRUCT_BODY()
-
-    TArray<FString> AvailableRoomsKeys;
-
-    int Entropy;
-
-    bool IsCollapsed = false;
-};

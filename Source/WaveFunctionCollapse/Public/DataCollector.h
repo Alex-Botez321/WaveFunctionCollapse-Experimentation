@@ -25,13 +25,13 @@ protected:
 
 	const int32 DirectionCount = 4;
 
-	TArray<FRoomData> RoomsData;
+	TArray<FJSonRoomData> RoomsData;
 public:	
 	
 };
 
 USTRUCT(BlueprintType, Category = "RoomData")
-struct FRoomData
+struct FJSonRoomData
 {
 	GENERATED_BODY()
 
@@ -52,7 +52,7 @@ struct FRoomData
 	TArray<TSubclassOf<ARoomBase>> Right;
 
 	//needed for Tarray.find to work
-	bool operator==(const FRoomData& Other) const
+	bool operator==(const FJSonRoomData& Other) const
 	{
 		return RoomClass == Other.RoomClass;
 	}
