@@ -26,14 +26,14 @@ void UWFCSubsystem::AlgorithmSolver()
 {
 	//temporary start point for easier testing
 	int32 StartPoint = GridSize * 0.5f;
-	TSubclassOf<ARoomBase> StartTile = Grid[StartPoint][StartPoint].AvailableRoomKeys[0];
-	Grid[StartPoint][StartPoint].AvailableRoomKeys.Empty();
-	Grid[StartPoint][StartPoint].AvailableRoomKeys.Add(StartTile);
+	TSubclassOf<ARoomBase> StartTile = Grid[StartPoint][StartPoint].AvailableCellKeys[0];
+	Grid[StartPoint][StartPoint].AvailableCellKeys.Empty();
+	Grid[StartPoint][StartPoint].AvailableCellKeys.Add(StartTile);
 	Grid[StartPoint][StartPoint].IsFullyCollapsed = true;
 	
 	int Iterator = 0;
 	int LoopLimit = 1000;
-	while (!IsGridFull() || Iterator<LoopLimit)
+	while (!IsGridFull() || Iterator < LoopLimit)
 	{
 		for (int x = 0; x < GridSize; x++)
 		{
@@ -42,19 +42,24 @@ void UWFCSubsystem::AlgorithmSolver()
 				CollapseCell(x, y);
 			}
 		}
+
+		//Infinite loop prevention
 		if (Iterator > LoopLimit)
 			break;
 		Iterator++;
 	}
 }
 
+
 void UWFCSubsystem::CollapseCell(int32 x, int32 y)
 {
-	//if (Grid[x][y].IsFullyCollapsed)
-	//	return;
+	//Prevents collapse of rooms already collapsed
+	if (Grid[x][y].IsFullyCollapsed)
+		return;
 
 	bool HasBeenCollapsed = false;
 
+	//used to adjust index for neighbours
 	TArray<FVector2D> Direction;
 	Direction.SetNum(4);
 	Direction[0] = (FVector2D(-1, 0));
@@ -70,45 +75,48 @@ void UWFCSubsystem::CollapseCell(int32 x, int32 y)
 		if (!Grid.IsValidIndex(NeighbourX) || !Grid[NeighbourX].IsValidIndex(NeighbourY))
 			continue;
 
-		if (Grid[NeighbourX][NeighbourY].AvailableRoomKeys.IsEmpty())
+		if (Grid[NeighbourX][NeighbourY].AvailableCellKeys.IsEmpty())
 		{
 			UE_LOG(LogTemp, Warning, TEXT("WFC Algorithm failed at position:  %d , %d "), NeighbourX, NeighbourY);
 			continue;
 		}
 
-		TArray<TSubclassOf<ARoomBase>> AvailableRooms;
-		for (TSubclassOf<ARoomBase> NeighbourRoomKey : Grid[NeighbourX][NeighbourY].AvailableRoomKeys)
+		//Collecting the requirements of neighbouring rooms
+		TArray<TSubclassOf<ARoomBase>> AvailableCells;
+		for (TSubclassOf<ARoomBase> NeighbourRoomKey : Grid[NeighbourX][NeighbourY].AvailableCellKeys)
 		{
-			for (TSubclassOf<ARoomBase> Key : AdjacencyRules[NeighbourRoomKey].Neighbours[i].Row)
+			for (TSubclassOf<ARoomBase> Key : AdjacencyRules[NeighbourRoomKey].NeighbourCells[i].Row)
 			{
-				if (AvailableRooms.Contains(Key))
+				if (AvailableCells.Contains(Key))
 					continue;
 
-				AvailableRooms.Add(Key);
+				AvailableCells.Add(Key);
 			}
 		}
 
+		//collecting rooms that do not accomodate neighbour requirements
 		TArray<TSubclassOf<ARoomBase>> KeysToBeRemoved;
-		for (TSubclassOf<ARoomBase> RoomKey : Grid[x][y].AvailableRoomKeys)
+		for (TSubclassOf<ARoomBase> CellKey : Grid[x][y].AvailableCellKeys)
 		{
-			if (AvailableRooms.Contains(RoomKey))
+			if (AvailableCells.Contains(CellKey))
 				continue;
 
-			KeysToBeRemoved.Add(RoomKey);
+			KeysToBeRemoved.Add(CellKey);
 			HasBeenCollapsed = true;
 		}
 
-		for (TSubclassOf<ARoomBase> RoomKey : KeysToBeRemoved)
+		//removing rooms that do not accomodate neighbour requirements
+		for (TSubclassOf<ARoomBase> CellKey : KeysToBeRemoved)
 		{
-			Grid[x][y].AvailableRoomKeys.Remove(RoomKey);
+			Grid[x][y].AvailableCellKeys.Remove(CellKey);
 		}
 		
-		if (Grid[x][y].AvailableRoomKeys.Num() == 1)
+		if (Grid[x][y].AvailableCellKeys.Num() == 1)
 			Grid[x][y].IsFullyCollapsed = true;
-		else if (Grid[x][y].AvailableRoomKeys.IsEmpty())
+		else if (Grid[x][y].AvailableCellKeys.IsEmpty())
 			UE_LOG(LogTemp, Warning, TEXT("WFC Algorithm failed at position:  %d , %d "), (NeighbourX), (NeighbourY));
 
-
+		//Collapse neighbours if the available room array shrunk
 		if (HasBeenCollapsed)
 		{
 			CollapseCell(NeighbourX, NeighbourY);
@@ -138,9 +146,9 @@ void UWFCSubsystem::PopulateGrid()
 		Grid[x].SetNum(GridSize);
 		for (int y = 0; y < GridSize; y++)
 		{
-			for (TPair<TSubclassOf<ARoomBase>, FRoomData>& Pair : AdjacencyRules)
+			for (TPair<TSubclassOf<ARoomBase>, FCellData>& Pair : AdjacencyRules)
 			{
-				Grid[x][y].AvailableRoomKeys.Add(Pair.Key);
+				Grid[x][y].AvailableCellKeys.Add(Pair.Key);
 			}
 		}
 	}
@@ -170,16 +178,16 @@ void UWFCSubsystem::LoadAdjacencyRules()
 
 		TArray<TSharedPtr<FJsonValue>> RoomArray = JsonRoomType.Value->AsArray();
 
-		FJSonRoomData RoomData;
+		FJSonCellData RoomData;
 		if (FJsonObjectConverter::JsonObjectToUStruct(RoomArray[0]->AsObject().ToSharedRef(), &RoomData, 0, 0))
 		{
-			FRoomData FormatedRoomData;
-			FormatedRoomData.RoomClass = RoomData.RoomClass;
-			FormatedRoomData.Neighbours.SetNum(4);
-			FormatedRoomData.Neighbours[0].Row.Append(RoomData.Forward);
-			FormatedRoomData.Neighbours[1].Row.Append(RoomData.Back);
-			FormatedRoomData.Neighbours[2].Row.Append(RoomData.Left);
-			FormatedRoomData.Neighbours[3].Row.Append(RoomData.Right);
+			FCellData FormatedRoomData;
+			FormatedRoomData.CellClass = RoomData.CellClass;
+			FormatedRoomData.NeighbourCells.SetNum(4);
+			FormatedRoomData.NeighbourCells[0].Row.Append(RoomData.Forward);
+			FormatedRoomData.NeighbourCells[1].Row.Append(RoomData.Back);
+			FormatedRoomData.NeighbourCells[2].Row.Append(RoomData.Left);
+			FormatedRoomData.NeighbourCells[3].Row.Append(RoomData.Right);
 
 			AdjacencyRules.Add(RoomName, FormatedRoomData);
 		}

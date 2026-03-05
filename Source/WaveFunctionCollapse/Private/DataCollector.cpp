@@ -35,18 +35,18 @@ void ADataCollector::BeginPlay()
 	{
 		FVector Start = ItActor->GetActorLocation();
 
-		FJSonRoomData CurrentRoom;
-		CurrentRoom.RoomClass = ItActor->GetClass();
+		FJSonCellData CurrentRoom;
+		CurrentRoom.CellClass = ItActor->GetClass();
 		
 		TArray<TArray<TSubclassOf<ARoomBase>>> RoomAdjacent;
 		RoomAdjacent.SetNum(DirectionCount);
-		int32 Index = RoomsData.Find(CurrentRoom);
+		int32 Index = CellsData.Find(CurrentRoom);
 		if (Index != INDEX_NONE)
 		{
-			RoomAdjacent[0].Append(RoomsData[Index].Forward);
-			RoomAdjacent[1].Append(RoomsData[Index].Back);
-			RoomAdjacent[2].Append(RoomsData[Index].Left);
-			RoomAdjacent[3].Append(RoomsData[Index].Right);
+			RoomAdjacent[0].Append(CellsData[Index].Forward);
+			RoomAdjacent[1].Append(CellsData[Index].Back);
+			RoomAdjacent[2].Append(CellsData[Index].Left);
+			RoomAdjacent[3].Append(CellsData[Index].Right);
 		}
 
 		TArray<FVector> Direction;
@@ -98,15 +98,15 @@ void ADataCollector::BeginPlay()
 		if (Index != INDEX_NONE)
 		{
 			//To Do: find better way to work around ue5 2d array limitation to remove the need to constantly empty arrays.
-			RoomsData[Index].Forward.Empty();
-			RoomsData[Index].Back.Empty();
-			RoomsData[Index].Left.Empty();
-			RoomsData[Index].Right.Empty();
+			CellsData[Index].Forward.Empty();
+			CellsData[Index].Back.Empty();
+			CellsData[Index].Left.Empty();
+			CellsData[Index].Right.Empty();
 
-			RoomsData[Index].Forward.Append(RoomAdjacent[0]);
-			RoomsData[Index].Back.Append(RoomAdjacent[1]);
-			RoomsData[Index].Left.Append(RoomAdjacent[2]);
-			RoomsData[Index].Right.Append(RoomAdjacent[3]);
+			CellsData[Index].Forward.Append(RoomAdjacent[0]);
+			CellsData[Index].Back.Append(RoomAdjacent[1]);
+			CellsData[Index].Left.Append(RoomAdjacent[2]);
+			CellsData[Index].Right.Append(RoomAdjacent[3]);
 		}
 		else
 		{
@@ -114,20 +114,20 @@ void ADataCollector::BeginPlay()
 			CurrentRoom.Back.Append(RoomAdjacent[1]);
 			CurrentRoom.Left.Append(RoomAdjacent[2]);
 			CurrentRoom.Right.Append(RoomAdjacent[3]);
-			RoomsData.Add(CurrentRoom);
+			CellsData.Add(CurrentRoom);
 		}
 		
 	}
 
 	//create json structure in memory
 	TSharedPtr<FJsonObject> JsonObject = MakeShared<FJsonObject>();
-	for (FJSonRoomData& Room : RoomsData)
+	for (FJSonCellData& Room : CellsData)
 	{
 		TArray<TSharedPtr<FJsonValue>> JsonArray;
 		TSharedPtr<FJsonObject> JsonVariant = MakeShared<FJsonObject>();
-		FJsonObjectConverter::UStructToJsonObject(FJSonRoomData::StaticStruct(), &Room, JsonVariant.ToSharedRef(), 0, 0);
+		FJsonObjectConverter::UStructToJsonObject(FJSonCellData::StaticStruct(), &Room, JsonVariant.ToSharedRef(), 0, 0);
 		JsonArray.Add(MakeShared<FJsonValueObject>(JsonVariant));
-		JsonObject->SetArrayField(Room.RoomClass->GetPathName(), JsonArray);
+		JsonObject->SetArrayField(Room.CellClass->GetPathName(), JsonArray);
 	}
 
 	//create json valid text

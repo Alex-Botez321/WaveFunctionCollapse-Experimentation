@@ -22,7 +22,7 @@ struct FNeighboursRow
 };
 
 USTRUCT(BlueprintType, Category = "RoomData")
-struct FRoomData
+struct FCellData
 {
     GENERATED_BODY()
 
@@ -31,24 +31,24 @@ struct FRoomData
     //work around lack of 2D array
 
     UPROPERTY()
-    TSubclassOf<ARoomBase> RoomClass;
+    TSubclassOf<ARoomBase> CellClass;
 
     UPROPERTY()
-    TArray<FNeighboursRow> Neighbours;
+    TArray<FNeighboursRow> NeighbourCells;
 
     //needed for Tarray.find to work
-    bool operator==(const FRoomData& Other) const
+    bool operator==(const FCellData& Other) const
     {
-        return RoomClass == Other.RoomClass;
+        return CellClass == Other.CellClass;
     }
 };
 
 USTRUCT(BlueprintType, Atomic)
-struct FTileData
+struct FGridCellData
 {
     GENERATED_BODY()
 
-    TArray<TSubclassOf<ARoomBase>> AvailableRoomKeys;
+    TArray<TSubclassOf<ARoomBase>> AvailableCellKeys;
 
     int Entropy;
 
@@ -67,6 +67,11 @@ public:
     UFUNCTION(BlueprintCallable)
     void AlgorithmSolver();
 
+    /// <summary>
+    /// Checks which cells can generate based on its neighbouring cells
+    /// </summary>
+    /// <param name="x">Grid index</param>
+    /// <param name="y">Grid index</param>
     UFUNCTION(BlueprintCallable)
     void CollapseCell(int32 x, int32 y);
 
@@ -82,9 +87,9 @@ public:
     UFUNCTION()
     bool IsGridFull();
 
-    TMap<TSubclassOf<ARoomBase>, FRoomData> AdjacencyRules;
+    TMap<TSubclassOf<ARoomBase>, FCellData> AdjacencyRules;
 
-    TArray<TArray<FTileData>> Grid;
+    TArray<TArray<FGridCellData>> Grid;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Grid Config")
     int GridSize;

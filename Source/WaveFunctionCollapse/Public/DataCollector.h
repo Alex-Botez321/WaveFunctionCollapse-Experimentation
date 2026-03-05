@@ -25,13 +25,13 @@ protected:
 
 	const int32 DirectionCount = 4;
 
-	TArray<FJSonRoomData> RoomsData;
+	TArray<FJSonCellData> CellsData;
 public:	
 	
 };
 
 USTRUCT(BlueprintType, Category = "RoomData")
-struct FJSonRoomData
+struct FJSonCellData
 {
 	GENERATED_BODY()
 
@@ -40,7 +40,7 @@ struct FJSonRoomData
 	//work around lack of 2D array
 	
 	UPROPERTY()
-	TSubclassOf<ARoomBase> RoomClass;
+	TSubclassOf<ARoomBase> CellClass;
 
 	UPROPERTY()
 	TArray<TSubclassOf<ARoomBase>> Forward;
@@ -52,8 +52,8 @@ struct FJSonRoomData
 	TArray<TSubclassOf<ARoomBase>> Right;
 
 	//needed for Tarray.find to work
-	bool operator==(const FJSonRoomData& Other) const
+	bool operator==(const FJSonCellData& Other) const
 	{
-		return RoomClass == Other.RoomClass;
+		return CellClass == Other.CellClass;
 	}
 };
