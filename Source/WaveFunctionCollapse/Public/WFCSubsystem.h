@@ -34,6 +34,9 @@ struct FCellData
     TSubclassOf<ARoomBase> CellClass;
 
     UPROPERTY()
+    int32 Weight;
+
+    UPROPERTY()
     TArray<FNeighboursRow> NeighbourCells;
 
     //needed for Tarray.find to work
@@ -87,12 +90,19 @@ public:
     UFUNCTION()
     bool IsGridFull();
 
+    UFUNCTION()
+    FIntPoint FindLowestEntropy();
+
+    UFUNCTION()
+    void UpdateEntropy(int32 x, int32 y);
+
+    UPROPERTY()
     TMap<TSubclassOf<ARoomBase>, FCellData> AdjacencyRules;
 
     TArray<TArray<FGridCellData>> Grid;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Grid Config")
-    int GridSize;
+    int32 GridSize;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite)
     TArray<TSoftObjectPtr<UWorld>> AllowedWorlds; //TSoftObjectPointer is similar to TSubClassOf in this case
