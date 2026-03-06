@@ -21,6 +21,7 @@ protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
+	UPROPERTY(BlueprintReadWrite, Category = "WFC Generation")
 	float Distance;
 
 	const int32 DirectionCount = 4;
@@ -41,6 +42,9 @@ struct FJSonCellData
 	
 	UPROPERTY()
 	TSubclassOf<ARoomBase> CellClass;
+
+	UPROPERTY()
+	int32 Weight;
 
 	UPROPERTY()
 	TArray<TSubclassOf<ARoomBase>> Forward;

@@ -12,7 +12,9 @@ class WAVEFUNCTIONCOLLAPSE_API ARoomBase : public AActor
 public:	
 	// Sets default values for this actor's properties
 	ARoomBase();
-	int SpawnWeight = 0;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "WFC Generation")
+	int32 SpawnWeight;
 
 protected:
 	// Called when the game starts or when spawned

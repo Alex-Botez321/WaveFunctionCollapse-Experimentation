@@ -37,7 +37,8 @@ void ADataCollector::BeginPlay()
 
 		FJSonCellData CurrentCell;
 		CurrentCell.CellClass = ItActor->GetClass();
-		
+		CurrentCell.Weight = ItActor->SpawnWeight;
+
 		TArray<TArray<TSubclassOf<ARoomBase>>> AdjacentCell;
 		AdjacentCell.SetNum(DirectionCount);
 		int32 Index = CellsData.Find(CurrentCell);
@@ -94,7 +95,7 @@ void ADataCollector::BeginPlay()
 
 		}
 
-		//addit the data of the current cell to the data array.
+		//add the data of the current cell to the data array.
 		if (Index != INDEX_NONE)
 		{
 			//To Do: find better way to work around ue5 2d array limitation to remove the need to constantly empty arrays.
