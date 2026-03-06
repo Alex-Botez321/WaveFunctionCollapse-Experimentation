@@ -12,19 +12,7 @@ class WAVEFUNCTIONCOLLAPSE_API ARoomBase : public AActor
 public:	
 	// Sets default values for this actor's properties
 	ARoomBase();
-
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Neighbours")
-    TArray<TSubclassOf<ARoomBase>> AvaiableNeighboursLeft;
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Neighbours")
-    TArray<TSubclassOf<ARoomBase>> AvaiableNeighboursRight;
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Neighbours")
-    TArray<TSubclassOf<ARoomBase>> AvaiableNeighboursForwards;
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Neighbours")
-    TArray<TSubclassOf<ARoomBase>> AvaiableNeighboursBackwards;
-
-	TArray<TArray<TSubclassOf<ARoomBase>>> AvaiableNeighbours;
-
-    const int32 NeighbourCount = 4;
+	int SpawnWeight = 0;
 
 protected:
 	// Called when the game starts or when spawned

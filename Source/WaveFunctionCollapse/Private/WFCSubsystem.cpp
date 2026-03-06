@@ -19,7 +19,7 @@
 
 UWFCSubsystem::UWFCSubsystem()
 {
-	GridSize = 4;
+	GridSize = 10;
 }
 
 void UWFCSubsystem::AlgorithmSolver()
@@ -33,6 +33,7 @@ void UWFCSubsystem::AlgorithmSolver()
 	
 	int Iterator = 0;
 	int LoopLimit = 1000;
+
 	while (!IsGridFull() || Iterator < LoopLimit)
 	{
 		for (int x = 0; x < GridSize; x++)
@@ -45,7 +46,10 @@ void UWFCSubsystem::AlgorithmSolver()
 
 		//Infinite loop prevention
 		if (Iterator > LoopLimit)
+		{
+			UE_LOG(LogTemp, Warning, TEXT("WFC Algorithm Infinite Loop Hit "));
 			break;
+		}
 		Iterator++;
 	}
 }

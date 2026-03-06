@@ -35,18 +35,18 @@ void ADataCollector::BeginPlay()
 	{
 		FVector Start = ItActor->GetActorLocation();
 
-		FJSonCellData CurrentRoom;
-		CurrentRoom.CellClass = ItActor->GetClass();
+		FJSonCellData CurrentCell;
+		CurrentCell.CellClass = ItActor->GetClass();
 		
-		TArray<TArray<TSubclassOf<ARoomBase>>> RoomAdjacent;
-		RoomAdjacent.SetNum(DirectionCount);
-		int32 Index = CellsData.Find(CurrentRoom);
+		TArray<TArray<TSubclassOf<ARoomBase>>> AdjacentCell;
+		AdjacentCell.SetNum(DirectionCount);
+		int32 Index = CellsData.Find(CurrentCell);
 		if (Index != INDEX_NONE)
 		{
-			RoomAdjacent[0].Append(CellsData[Index].Forward);
-			RoomAdjacent[1].Append(CellsData[Index].Back);
-			RoomAdjacent[2].Append(CellsData[Index].Left);
-			RoomAdjacent[3].Append(CellsData[Index].Right);
+			AdjacentCell[0].Append(CellsData[Index].Forward);
+			AdjacentCell[1].Append(CellsData[Index].Back);
+			AdjacentCell[2].Append(CellsData[Index].Left);
+			AdjacentCell[3].Append(CellsData[Index].Right);
 		}
 
 		TArray<FVector> Direction;
@@ -83,9 +83,9 @@ void ADataCollector::BeginPlay()
 				UE_LOG(LogTemp, Log, TEXT("Hit %s at ^s"), *Hit.GetActor()->GetName(), *Hit.ImpactPoint.ToString());
 				DrawDebugLine(World, Start, End, FColor::Green, true, 100.0f, 0, 1.5f);
 
-				if (!RoomAdjacent[i].Contains(HitClass))
+				if (!AdjacentCell[i].Contains(HitClass))
 				{
-					RoomAdjacent[i].Add(HitClass);
+					AdjacentCell[i].Add(HitClass);
 				}
 				continue;
 			}
@@ -94,7 +94,7 @@ void ADataCollector::BeginPlay()
 
 		}
 
-		//addit the data of the current room to the data array.
+		//addit the data of the current cell to the data array.
 		if (Index != INDEX_NONE)
 		{
 			//To Do: find better way to work around ue5 2d array limitation to remove the need to constantly empty arrays.
@@ -103,18 +103,18 @@ void ADataCollector::BeginPlay()
 			CellsData[Index].Left.Empty();
 			CellsData[Index].Right.Empty();
 
-			CellsData[Index].Forward.Append(RoomAdjacent[0]);
-			CellsData[Index].Back.Append(RoomAdjacent[1]);
-			CellsData[Index].Left.Append(RoomAdjacent[2]);
-			CellsData[Index].Right.Append(RoomAdjacent[3]);
+			CellsData[Index].Forward.Append(AdjacentCell[0]);
+			CellsData[Index].Back.Append(AdjacentCell[1]);
+			CellsData[Index].Left.Append(AdjacentCell[2]);
+			CellsData[Index].Right.Append(AdjacentCell[3]);
 		}
 		else
 		{
-			CurrentRoom.Forward.Append(RoomAdjacent[0]);
-			CurrentRoom.Back.Append(RoomAdjacent[1]);
-			CurrentRoom.Left.Append(RoomAdjacent[2]);
-			CurrentRoom.Right.Append(RoomAdjacent[3]);
-			CellsData.Add(CurrentRoom);
+			CurrentCell.Forward.Append(AdjacentCell[0]);
+			CurrentCell.Back.Append(AdjacentCell[1]);
+			CurrentCell.Left.Append(AdjacentCell[2]);
+			CurrentCell.Right.Append(AdjacentCell[3]);
+			CellsData.Add(CurrentCell);
 		}
 		
 	}
