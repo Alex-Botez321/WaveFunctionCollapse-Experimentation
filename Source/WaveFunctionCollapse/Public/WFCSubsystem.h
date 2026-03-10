@@ -104,6 +104,9 @@ public:
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Grid Config")
     int32 GridSize;
 
+    UPROPERTY()
+    TArray<FIntPoint> IndexOffset;
+
     UPROPERTY(EditAnywhere, BlueprintReadWrite)
     TArray<TSoftObjectPtr<UWorld>> AllowedWorlds; //TSoftObjectPointer is similar to TSubClassOf in this case
 

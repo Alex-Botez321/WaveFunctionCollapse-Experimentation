@@ -19,7 +19,13 @@
 
 UWFCSubsystem::UWFCSubsystem()
 {
-	GridSize = 10;
+	GridSize = 4;
+
+	IndexOffset.SetNum(4);
+	IndexOffset[0] = (FIntPoint(-1, 0));
+	IndexOffset[1] = (FIntPoint(1, 0));
+	IndexOffset[2] = (FIntPoint(0, 1));
+	IndexOffset[3] = (FIntPoint(0, -1));
 }
 
 void UWFCSubsystem::AlgorithmSolver()
@@ -30,6 +36,15 @@ void UWFCSubsystem::AlgorithmSolver()
 	Grid[StartPoint][StartPoint].AvailableCellKeys.Empty();
 	Grid[StartPoint][StartPoint].AvailableCellKeys.Add(StartTile);
 	Grid[StartPoint][StartPoint].IsFullyCollapsed = true;
+
+	for (int i = 0; i < IndexOffset.Num(); i++)
+	{
+		int32 NeighbourX = IndexOffset[i].X + StartPoint;
+		int32 NeighbourY = IndexOffset[i].Y + StartPoint;
+
+		if (Grid.IsValidIndex(NeighbourX) && Grid[NeighbourX].IsValidIndex(NeighbourY))
+			CollapseCell(NeighbourX, NeighbourY);
+	}
 
 	/*
 	///////////////---------------/////////////
@@ -46,8 +61,26 @@ void UWFCSubsystem::AlgorithmSolver()
 	while (!IsGridFull() || Iterator < LoopLimit)
 	{
 		FIntPoint LowestEntropyIndex = FindLowestEntropy();
+		//potentially remove extra collapse
 		CollapseCell(LowestEntropyIndex.X, LowestEntropyIndex.Y);
 
+		FGridCellData NewCellData = Grid[LowestEntropyIndex.X][LowestEntropyIndex.Y];
+
+		int32 RandomCell = FMath::RandRange(0, NewCellData.AvailableCellKeys.Num() - 1);
+		TSubclassOf<ARoomBase> ChosenKey = NewCellData.AvailableCellKeys[RandomCell];
+		NewCellData.AvailableCellKeys.Empty();
+		NewCellData.AvailableCellKeys.Add(ChosenKey);
+		NewCellData.IsFullyCollapsed = true;
+		Grid[LowestEntropyIndex.X][LowestEntropyIndex.Y] = NewCellData;
+
+		for (int i = 0; i < IndexOffset.Num(); i++)
+		{
+			int32 NeighbourX = IndexOffset[i].X + LowestEntropyIndex.X;
+			int32 NeighbourY = IndexOffset[i].Y + LowestEntropyIndex.Y;
+
+			if (Grid.IsValidIndex(NeighbourX) && Grid[NeighbourX].IsValidIndex(NeighbourY))
+				CollapseCell(NeighbourX, NeighbourY);
+		}
 
 		//Infinite loop prevention
 		if (Iterator > LoopLimit)
@@ -64,23 +97,12 @@ void UWFCSubsystem::CollapseCell(int32 x, int32 y)
 	if (Grid[x][y].IsFullyCollapsed)
 		return;
 
-	if(Grid[x][y].AvailableCellKeys.Num() == 1)
-
-
 	bool HasBeenCollapsed = false;
-
-	//used to adjust index for neighbours
-	TArray<FIntPoint> Direction;
-	Direction.SetNum(4);
-	Direction[0] = (FIntPoint(-1, 0));
-	Direction[1] = (FIntPoint(1, 0));
-	Direction[2] = (FIntPoint(0, 1));
-	Direction[3] = (FIntPoint(0, -1));
 	
-	for (int i = 0; i < Direction.Num(); i++)
+	for (int i = 0; i < IndexOffset.Num(); i++)
 	{
-		int32 NeighbourX = (int32)Direction[i].X + x;
-		int32 NeighbourY = (int32)Direction[i].Y + y;
+		int32 NeighbourX = IndexOffset[i].X + x;
+		int32 NeighbourY = IndexOffset[i].Y + y;
 
 		if (!Grid.IsValidIndex(NeighbourX) || !Grid[NeighbourX].IsValidIndex(NeighbourY))
 			continue;
