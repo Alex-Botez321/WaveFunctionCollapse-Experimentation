@@ -36,6 +36,7 @@ void UWFCSubsystem::AlgorithmSolver()
 	Grid[StartPoint][StartPoint].AvailableCellKeys.Empty();
 	Grid[StartPoint][StartPoint].AvailableCellKeys.Add(StartTile);
 	Grid[StartPoint][StartPoint].IsFullyCollapsed = true;
+	UpdateEntropy(StartPoint, StartPoint);
 
 	for (int i = 0; i < IndexOffset.Num(); i++)
 	{
@@ -43,7 +44,10 @@ void UWFCSubsystem::AlgorithmSolver()
 		int32 NeighbourY = IndexOffset[i].Y + StartPoint;
 
 		if (Grid.IsValidIndex(NeighbourX) && Grid[NeighbourX].IsValidIndex(NeighbourY))
+		{
 			CollapseCell(NeighbourX, NeighbourY);
+			UpdateEntropy(NeighbourX, NeighbourY);
+		}
 	}
 
 	/*
@@ -58,7 +62,7 @@ void UWFCSubsystem::AlgorithmSolver()
 	int Iterator = 0;
 	int LoopLimit = 1000;
 
-	while (!IsGridFull() || Iterator < LoopLimit)
+	while (!IsGridFull())
 	{
 		FIntPoint LowestEntropyIndex = FindLowestEntropy();
 		//potentially remove extra collapse
@@ -72,6 +76,7 @@ void UWFCSubsystem::AlgorithmSolver()
 		NewCellData.AvailableCellKeys.Add(ChosenKey);
 		NewCellData.IsFullyCollapsed = true;
 		Grid[LowestEntropyIndex.X][LowestEntropyIndex.Y] = NewCellData;
+		UpdateEntropy(LowestEntropyIndex.X, LowestEntropyIndex.Y);
 
 		for (int i = 0; i < IndexOffset.Num(); i++)
 		{
@@ -79,13 +84,16 @@ void UWFCSubsystem::AlgorithmSolver()
 			int32 NeighbourY = IndexOffset[i].Y + LowestEntropyIndex.Y;
 
 			if (Grid.IsValidIndex(NeighbourX) && Grid[NeighbourX].IsValidIndex(NeighbourY))
+			{
 				CollapseCell(NeighbourX, NeighbourY);
+				UpdateEntropy(NeighbourX, NeighbourY);
+			}
 		}
 
 		//Infinite loop prevention
 		if (Iterator > LoopLimit)
 		{
-			UE_LOG(LogTemp, Warning, TEXT("WFC Algorithm Infinite Loop Hit "));
+			UE_LOG(LogTemp, Warning, TEXT("WFC Algorithm Infinite Loop Hit %d "), Iterator);
 			break;
 		}
 		Iterator++;
@@ -173,6 +181,7 @@ bool UWFCSubsystem::IsGridFull()
 FIntPoint UWFCSubsystem::FindLowestEntropy()
 {
 	FIntPoint LowestEntropyIndex = FIntPoint(0, 0);
+	int32 LowestEntropy = 999999; //To Do: Remove temp value
 
 	for (int x = 0; x < GridSize; x++)
 	{
@@ -181,9 +190,10 @@ FIntPoint UWFCSubsystem::FindLowestEntropy()
 			if (Grid[x][y].IsFullyCollapsed)
 				continue;
 
-			if (Grid[x][y].Entropy < Grid[LowestEntropyIndex.X][LowestEntropyIndex.Y].Entropy)
+			if (Grid[x][y].Entropy < LowestEntropy)
 			{
 				LowestEntropyIndex = FIntPoint(x, y);
+				LowestEntropy = Grid[x][y].Entropy;
 			}
 		}
 	}
@@ -192,11 +202,11 @@ FIntPoint UWFCSubsystem::FindLowestEntropy()
 
 void UWFCSubsystem::UpdateEntropy(int32 x, int32 y)
 {
-	if (Grid[x][y].IsFullyCollapsed)
+	/*if (Grid[x][y].IsFullyCollapsed)
 	{
 		Grid[x][y].Entropy = 0;
 		return;
-	}
+	}*/
 
 	int32 TotalWeight = 0;
 	for (TSubclassOf<ARoomBase> CellKey : Grid[x][y].AvailableCellKeys)
@@ -219,6 +229,7 @@ void UWFCSubsystem::PopulateGrid()
 			{
 				Grid[x][y].AvailableCellKeys.Add(Pair.Key);
 			}
+			UpdateEntropy(x, y);
 		}
 	}
 }
@@ -257,7 +268,7 @@ void UWFCSubsystem::LoadAdjacencyRules()
 			FormatedRoomData.NeighbourCells[1].Row.Append(RoomData.Back);
 			FormatedRoomData.NeighbourCells[2].Row.Append(RoomData.Left);
 			FormatedRoomData.NeighbourCells[3].Row.Append(RoomData.Right);
-
+			FormatedRoomData.Weight = RoomData.Weight;
 			AdjacencyRules.Add(RoomName, FormatedRoomData);
 		}
 	}
