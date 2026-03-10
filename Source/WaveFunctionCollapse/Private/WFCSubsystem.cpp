@@ -26,6 +26,8 @@ UWFCSubsystem::UWFCSubsystem()
 	IndexOffset[1] = (FIntPoint(1, 0));
 	IndexOffset[2] = (FIntPoint(0, 1));
 	IndexOffset[3] = (FIntPoint(0, -1));
+
+	CellOffset = 300;
 }
 
 void UWFCSubsystem::AlgorithmSolver()
@@ -216,6 +218,24 @@ void UWFCSubsystem::UpdateEntropy(int32 x, int32 y)
 	Grid[x][y].Entropy = TotalWeight;
 }
 
+void UWFCSubsystem::SpawnGrid()
+{
+	for (int x = 0; x < GridSize; x++)
+	{
+		for (int y = 0; y < GridSize; y++)
+		{
+			if (Grid[x][y].AvailableCellKeys.Num() <= 0)
+				continue;
+
+			FVector Location = FVector(x * CellOffset, y * CellOffset, 0);
+			FRotator Rotation(0.0f, 0.0f, 0.0f);
+			ARoomBase* Room = GetWorld()->SpawnActor<ARoomBase>(Grid[x][y].AvailableCellKeys[0], Location, Rotation);
+			FString Name = FString::Printf(TEXT("Room: %d,%d"), x, y);
+			Cast<AActor>(Room)->SetActorLabel(Name);
+		}
+	}
+}
+
 void UWFCSubsystem::PopulateGrid()
 {
 	Grid.SetNum(GridSize);
@@ -277,15 +297,12 @@ void UWFCSubsystem::LoadAdjacencyRules()
 
 }
 
-void UWFCSubsystem::SpawnGrid()
-{
-}
-
 void UWFCSubsystem::OnWorldBeginPlay(UWorld& InWorld)
 {
 	LoadAdjacencyRules();
 	PopulateGrid();
 	AlgorithmSolver();
+	SpawnGrid();
 }
 
 bool UWFCSubsystem::ShouldCreateSubsystem(UObject* Outer) const

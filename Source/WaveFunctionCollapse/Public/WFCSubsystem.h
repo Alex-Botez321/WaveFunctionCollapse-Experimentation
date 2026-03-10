@@ -110,6 +110,9 @@ public:
     UPROPERTY(EditAnywhere, BlueprintReadWrite)
     TArray<TSoftObjectPtr<UWorld>> AllowedWorlds; //TSoftObjectPointer is similar to TSubClassOf in this case
 
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Generation")
+    int32 CellOffset;
+
     virtual bool ShouldCreateSubsystem(UObject* Outer) const override;
 
     virtual void OnWorldBeginPlay(UWorld& InWorld) override;
