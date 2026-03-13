@@ -66,26 +66,6 @@ void UWFCSubsystem::AlgorithmSolver()
 	while (!IsGridFull())
 	{
 		FIntPoint LowestEntropyIndex = FindLowestEntropy();
-		//potentially remove extra collapse
-		//if (Grid[LowestEntropyIndex.X][LowestEntropyIndex.Y].AvailableCellKeys.IsEmpty())
-		//{
-			UE_LOG(LogTemp, Error, TEXT("WFC Algorithm failed at position:  %d , %d.  "), LowestEntropyIndex.X, LowestEntropyIndex.Y);
-			UE_LOG(LogTemp, Error, TEXT("WFC Algorithm failed at position:  %d "), Grid[LowestEntropyIndex.X][LowestEntropyIndex.Y].AvailableCellKeys.Num())
-		//}
-		CollapseCell(LowestEntropyIndex.X, LowestEntropyIndex.Y);
-		if (Grid[LowestEntropyIndex.X][LowestEntropyIndex.Y].AvailableCellKeys.IsEmpty())
-		{
-			UE_LOG(LogTemp, Error, TEXT("WFC Algorithm failed at position:  %d , %d.  "), LowestEntropyIndex.X, LowestEntropyIndex.Y);
-			UE_LOG(LogTemp, Error, TEXT("WFC Algorithm failed at position:  %d "), Grid[LowestEntropyIndex.X][LowestEntropyIndex.Y].AvailableCellKeys.Num());
-			UE_LOG(LogTemp, Error, TEXT("WFC Algorithm failed at position:  %d "), Grid[LowestEntropyIndex.X + IndexOffset[0].X][LowestEntropyIndex.Y + IndexOffset[0].Y].AvailableCellKeys.Num());
-			UE_LOG(LogTemp, Error, TEXT("WFC Algorithm failed at position:  %d "), Grid[LowestEntropyIndex.X + IndexOffset[1].X][LowestEntropyIndex.Y + IndexOffset[1].Y].AvailableCellKeys.Num());
-			UE_LOG(LogTemp, Error, TEXT("WFC Algorithm failed at position:  %d "), Grid[LowestEntropyIndex.X + IndexOffset[2].X][LowestEntropyIndex.Y + IndexOffset[2].Y].AvailableCellKeys.Num());
-			UE_LOG(LogTemp, Error, TEXT("WFC Algorithm failed at position:  %d "), Grid[LowestEntropyIndex.X + IndexOffset[3].X][LowestEntropyIndex.Y + IndexOffset[3].Y].AvailableCellKeys.Num());
-			FVector Location = FVector(LowestEntropyIndex.X * CellOffset, LowestEntropyIndex.Y * CellOffset, 500);
-			FRotator Rotation(0.0f, 0.0f, 0.0f);
-			ARoomBase* Room = GetWorld()->SpawnActor<ARoomBase>(Grid[StartPoint][StartPoint].AvailableCellKeys[0], Location, Rotation);
-			break;
-		}
 
 		FGridCellData NewCellData = Grid[LowestEntropyIndex.X][LowestEntropyIndex.Y];
 
@@ -174,14 +154,22 @@ void UWFCSubsystem::CollapseCell(int32 x, int32 y)
 			Grid[x][y].IsFullyCollapsed = true;
 			UE_LOG(LogTemp, Warning, TEXT("WFC Algorithm failed at position:  %d , %d "), x, y);
 		}
+	}
+	UpdateEntropy(x, y);
 
-		//Collapse neighbours if the available room array shrunk and update its entropy value
-		if (HasBeenCollapsed)
+	//Collapse neighbours if the available room array shrunk and update its entropy value
+	if (HasBeenCollapsed)
+	{
+		for (int i = 0; i < IndexOffset.Num(); i++)
 		{
+			int32 NeighbourX = IndexOffset[i].X + x;
+			int32 NeighbourY = IndexOffset[i].Y + y;
+			if (!Grid.IsValidIndex(NeighbourX) || !Grid[NeighbourX].IsValidIndex(NeighbourY))
+				continue;
+
 			CollapseCell(NeighbourX, NeighbourY);
 		}
 	}
-	UpdateEntropy(x, y);
 }
 
 bool UWFCSubsystem::IsGridFull()
@@ -301,6 +289,7 @@ void UWFCSubsystem::LoadAdjacencyRules()
 			FCellData FormatedRoomData;
 			FormatedRoomData.CellClass = RoomData.CellClass;
 			FormatedRoomData.NeighbourCells.SetNum(4);
+			//loaded in reverse order to match the way the grid is generated
 			FormatedRoomData.NeighbourCells[3].Row.Append(RoomData.Forward);
 			FormatedRoomData.NeighbourCells[2].Row.Append(RoomData.Back);
 			FormatedRoomData.NeighbourCells[1].Row.Append(RoomData.Left);
