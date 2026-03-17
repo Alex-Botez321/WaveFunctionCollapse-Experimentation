@@ -96,6 +96,9 @@ public:
     UFUNCTION()
     void UpdateEntropy(int32 x, int32 y);
 
+    UFUNCTION()
+    void AssignRandomWeightedRoom(int32 x, int32 y);
+
     UPROPERTY()
     TMap<TSubclassOf<ARoomBase>, FCellData> AdjacencyRules;
 

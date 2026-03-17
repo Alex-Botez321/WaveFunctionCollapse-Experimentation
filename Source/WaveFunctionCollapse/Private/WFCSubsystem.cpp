@@ -34,31 +34,7 @@ void UWFCSubsystem::AlgorithmSolver()
 {
 	//temporary start point for easier testing
 	int32 StartPoint = GridSize * 0.5f;
-	TSubclassOf<ARoomBase> StartTile = Grid[StartPoint][StartPoint].AvailableCellKeys[0];
-	Grid[StartPoint][StartPoint].AvailableCellKeys.Empty();
-	Grid[StartPoint][StartPoint].AvailableCellKeys.Add(StartTile);
-	Grid[StartPoint][StartPoint].IsFullyCollapsed = true;
-	UpdateEntropy(StartPoint, StartPoint);
-
-	for (int i = 0; i < IndexOffset.Num(); i++)
-	{
-		int32 NeighbourX = IndexOffset[i].X + StartPoint;
-		int32 NeighbourY = IndexOffset[i].Y + StartPoint;
-
-		if (Grid.IsValidIndex(NeighbourX) && Grid[NeighbourX].IsValidIndex(NeighbourY))
-		{
-			CollapseCell(NeighbourX, NeighbourY);
-		}
-	}
-
-	/*
-	///////////////---------------/////////////
-	 To Do:
-	FIGURE OUT HOW TO BEST COLLAPSE A CELL AFTER IT IS CHOSEN RANDOMLY
-	///////////////---------------/////////////
-	*/
-
-
+	AssignRandomWeightedRoom(StartPoint, StartPoint);
 
 	int Iterator = 0;
 	int LoopLimit = 10000;
@@ -67,27 +43,7 @@ void UWFCSubsystem::AlgorithmSolver()
 	{
 		FIntPoint LowestEntropyIndex = FindLowestEntropy();
 
-		FGridCellData NewCellData = Grid[LowestEntropyIndex.X][LowestEntropyIndex.Y];
-
-		int32 RandomCell = FMath::RandRange(0, NewCellData.AvailableCellKeys.Num() - 1);
-		TSubclassOf<ARoomBase> ChosenKey = NewCellData.AvailableCellKeys[RandomCell];
-		NewCellData.AvailableCellKeys.Empty();
-		NewCellData.AvailableCellKeys.Add(ChosenKey);
-		NewCellData.IsFullyCollapsed = true;
-		Grid[LowestEntropyIndex.X][LowestEntropyIndex.Y] = NewCellData;
-		UpdateEntropy(LowestEntropyIndex.X, LowestEntropyIndex.Y);
-
-		for (int i = 0; i < IndexOffset.Num(); i++)
-		{
-			int32 NeighbourX = IndexOffset[i].X + LowestEntropyIndex.X;
-			int32 NeighbourY = IndexOffset[i].Y + LowestEntropyIndex.Y;
-
-			if (Grid.IsValidIndex(NeighbourX) && Grid[NeighbourX].IsValidIndex(NeighbourY))
-			{
-				CollapseCell(NeighbourX, NeighbourY);
-				UpdateEntropy(NeighbourX, NeighbourY);
-			}
-		}
+		AssignRandomWeightedRoom(LowestEntropyIndex.X, LowestEntropyIndex.Y);
 
 		//Infinite loop prevention
 		if (Iterator > LoopLimit)
@@ -209,18 +165,51 @@ FIntPoint UWFCSubsystem::FindLowestEntropy()
 
 void UWFCSubsystem::UpdateEntropy(int32 x, int32 y)
 {
-	/*if (Grid[x][y].IsFullyCollapsed)
-	{
-		Grid[x][y].Entropy = 0;
-		return;
-	}*/
-
 	int32 TotalWeight = 0;
 	for (TSubclassOf<ARoomBase> CellKey : Grid[x][y].AvailableCellKeys)
 	{
 		TotalWeight += AdjacencyRules[CellKey].Weight;
 	}
 	Grid[x][y].Entropy = TotalWeight;
+}
+
+void UWFCSubsystem::AssignRandomWeightedRoom(int32 x, int32 y)
+{
+	int32 TotalWeight = 0;
+
+	for (TSubclassOf<ARoomBase> Room : Grid[x][y].AvailableCellKeys)
+	{
+		TotalWeight += AdjacencyRules[Room].Weight;
+	}
+
+	int32 Rand = FMath::RandRange(0, TotalWeight);
+
+	for (TSubclassOf<ARoomBase> Room : Grid[x][y].AvailableCellKeys)
+	{
+		if (Rand > AdjacencyRules[Room].Weight)
+		{
+			Rand -= AdjacencyRules[Room].Weight;
+			continue;
+		}
+
+		Grid[x][y].AvailableCellKeys.Empty();
+		Grid[x][y].AvailableCellKeys.Add(Room);
+		Grid[x][y].IsFullyCollapsed = true;
+		UpdateEntropy(x, y);
+
+		for (int i = 0; i < IndexOffset.Num(); i++)
+		{
+			int32 NeighbourX = IndexOffset[i].X + x;
+			int32 NeighbourY = IndexOffset[i].Y + y;
+
+			if (Grid.IsValidIndex(NeighbourX) && Grid[NeighbourX].IsValidIndex(NeighbourY))
+			{
+				CollapseCell(NeighbourX, NeighbourY);
+			}
+		}
+
+		break;
+	}
 }
 
 void UWFCSubsystem::SpawnGrid()
@@ -232,9 +221,9 @@ void UWFCSubsystem::SpawnGrid()
 			if (Grid[x][y].AvailableCellKeys.IsEmpty())
 				continue;
 
-			FVector Location = FVector(x * CellOffset, y * CellOffset, 0);
+			FVector Position = FVector(x * CellOffset, y * CellOffset, 0);
 			FRotator Rotation(0.0f, 0.0f, 0.0f);
-			ARoomBase* Room = GetWorld()->SpawnActor<ARoomBase>(Grid[x][y].AvailableCellKeys[0], Location, Rotation);
+			ARoomBase* Room = GetWorld()->SpawnActor<ARoomBase>(Grid[x][y].AvailableCellKeys[0], Position, Rotation);
 			FString Name = FString::Printf(TEXT("Room: %d,%d"), x, y);
 			Cast<AActor>(Room)->SetActorLabel(Name);
 		}
