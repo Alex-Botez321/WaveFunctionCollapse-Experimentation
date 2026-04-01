@@ -67,7 +67,7 @@ public:
     /// <param name="x">Grid index</param>
     /// <param name="y">Grid index</param>
     UFUNCTION(BlueprintCallable)
-    void CollapseCell(int32 x, int32 y);
+    void CollapseCell(int32 x, int32 y, int32 z);
 
     UFUNCTION()
     void LoadAdjacencyRules();
@@ -82,24 +82,24 @@ public:
     bool IsGridFull();
 
     UFUNCTION()
-    FIntPoint FindLowestEntropy();
+    FIntVector FindLowestEntropy();
 
     UFUNCTION()
-    void UpdateEntropy(int32 x, int32 y);
+    void UpdateEntropy(int32 x, int32 y, int32 z);
 
     UFUNCTION()
-    void AssignRandomWeightedRoom(int32 x, int32 y);
+    void AssignRandomWeightedRoom(int32 x, int32 y, int32 z);
 
     UPROPERTY()
     TMap<TSubclassOf<ARoomBase>, FCellData> AdjacencyRules;
 
-    TArray<TArray<FGridCellData>> Grid;
+    TArray<TArray<TArray<FGridCellData>>> Grid;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Grid Config")
     int32 GridSize;
 
     UPROPERTY(BlueprintReadOnly, Category = "Grid Config")
-    TArray<FIntPoint> IndexOffset;
+    TArray<FIntVector> IndexOffset;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite)
     TArray<TSoftObjectPtr<UWorld>> AllowedWorlds; //TSoftObjectPointer is similar to TSubClassOf in this case

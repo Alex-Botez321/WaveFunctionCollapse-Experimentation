@@ -21,11 +21,13 @@ UWFCSubsystem::UWFCSubsystem()
 {
 	GridSize = 4;
 
-	IndexOffset.SetNum(4);
-	IndexOffset[0] = (FIntPoint(-1, 0));
-	IndexOffset[1] = (FIntPoint(1, 0));
-	IndexOffset[2] = (FIntPoint(0, -1));
-	IndexOffset[3] = (FIntPoint(0, 1));
+	IndexOffset.SetNum(6);
+	IndexOffset[0] = (FIntVector(-1, 0, 0));
+	IndexOffset[1] = (FIntVector(1, 0, 0));
+	IndexOffset[2] = (FIntVector(0, -1, 0));
+	IndexOffset[3] = (FIntVector(0, 1, 0));
+	IndexOffset[4] = (FIntVector(0, 0, -1));
+	IndexOffset[5] = (FIntVector(0, 0, 1));
 
 	CellOffset = 300;
 }
@@ -34,16 +36,16 @@ void UWFCSubsystem::AlgorithmSolver()
 {
 	//temporary start point for easier testing
 	int32 StartPoint = GridSize * 0.5f;
-	AssignRandomWeightedRoom(StartPoint, StartPoint);
+	AssignRandomWeightedRoom(StartPoint, StartPoint, StartPoint);
 
 	int Iterator = 0;
 	int LoopLimit = 10000;
 
 	while (!IsGridFull())
 	{
-		FIntPoint LowestEntropyIndex = FindLowestEntropy();
+		FIntVector LowestEntropyIndex = FindLowestEntropy();
 
-		AssignRandomWeightedRoom(LowestEntropyIndex.X, LowestEntropyIndex.Y);
+		AssignRandomWeightedRoom(LowestEntropyIndex.X, LowestEntropyIndex.Y, LowestEntropyIndex.Z);
 
 		//Infinite loop prevention
 		if (Iterator > LoopLimit)
@@ -55,7 +57,7 @@ void UWFCSubsystem::AlgorithmSolver()
 	}
 }
 
-void UWFCSubsystem::CollapseCell(int32 x, int32 y)
+void UWFCSubsystem::CollapseCell(int32 x, int32 y, int32 z)
 {
 	//if (Grid[x][y].IsFullyCollapsed)
 		//return;
@@ -66,16 +68,17 @@ void UWFCSubsystem::CollapseCell(int32 x, int32 y)
 	{
 		int32 NeighbourX = IndexOffset[i].X + x;
 		int32 NeighbourY = IndexOffset[i].Y + y;
+		int32 NeighbourZ = IndexOffset[i].Z + z;
 
 		if (!Grid.IsValidIndex(NeighbourX) || !Grid[NeighbourX].IsValidIndex(NeighbourY))
 			continue;
 
-		if (Grid[NeighbourX][NeighbourY].AvailableCellKeys.IsEmpty())
+		if (Grid[NeighbourX][NeighbourY][NeighbourZ].AvailableCellKeys.IsEmpty())
 			continue;
 
 		//Collecting the requirements of neighbouring rooms
 		TArray<TSubclassOf<ARoomBase>> AvailableCells;
-		for (TSubclassOf<ARoomBase> NeighbourRoomKey : Grid[NeighbourX][NeighbourY].AvailableCellKeys)
+		for (TSubclassOf<ARoomBase> NeighbourRoomKey : Grid[NeighbourX][NeighbourY][NeighbourZ].AvailableCellKeys)
 		{
 			for (TSubclassOf<ARoomBase> Key : AdjacencyRules[NeighbourRoomKey].NeighbourCells[i].Row)
 			{
@@ -88,7 +91,7 @@ void UWFCSubsystem::CollapseCell(int32 x, int32 y)
 
 		//collecting rooms that do not accomodate neighbour requirements
 		TArray<TSubclassOf<ARoomBase>> KeysToBeRemoved;
-		for (TSubclassOf<ARoomBase> CellKey : Grid[x][y].AvailableCellKeys)
+		for (TSubclassOf<ARoomBase> CellKey : Grid[x][y][z].AvailableCellKeys)
 		{
 			if (AvailableCells.Contains(CellKey))
 				continue;
@@ -100,18 +103,18 @@ void UWFCSubsystem::CollapseCell(int32 x, int32 y)
 		//removing rooms that do not accomodate neighbour requirements
 		for (TSubclassOf<ARoomBase> CellKey : KeysToBeRemoved)
 		{
-			Grid[x][y].AvailableCellKeys.Remove(CellKey);
+			Grid[x][y][z].AvailableCellKeys.Remove(CellKey);
 		}
 		
-		if (Grid[x][y].AvailableCellKeys.Num() == 1)
-			Grid[x][y].IsFullyCollapsed = true;
-		else if (Grid[x][y].AvailableCellKeys.IsEmpty())
+		if (Grid[x][y][z].AvailableCellKeys.Num() == 1)
+			Grid[x][y][z].IsFullyCollapsed = true;
+		else if (Grid[x][y][z].AvailableCellKeys.IsEmpty())
 		{
-			Grid[x][y].IsFullyCollapsed = true;
-			UE_LOG(LogTemp, Warning, TEXT("WFC Algorithm failed at position:  %d , %d "), x, y);
+			Grid[x][y][z].IsFullyCollapsed = true;
+			UE_LOG(LogTemp, Warning, TEXT("WFC Algorithm failed at position:  %d , %d, %d "), x, y, z);
 		}
 	}
-	UpdateEntropy(x, y);
+	UpdateEntropy(x, y, z);
 
 	//Collapse neighbours if the available room array shrunk and update its entropy value
 	if (HasBeenCollapsed)
@@ -120,10 +123,11 @@ void UWFCSubsystem::CollapseCell(int32 x, int32 y)
 		{
 			int32 NeighbourX = IndexOffset[i].X + x;
 			int32 NeighbourY = IndexOffset[i].Y + y;
-			if (!Grid.IsValidIndex(NeighbourX) || !Grid[NeighbourX].IsValidIndex(NeighbourY))
+			int32 NeighbourZ = IndexOffset[i].Z + z;
+			if (!Grid.IsValidIndex(NeighbourX) || !Grid[NeighbourX].IsValidIndex(NeighbourY) || !Grid[NeighbourX][NeighbourY].IsValidIndex(NeighbourZ))
 				continue;
 
-			CollapseCell(NeighbourX, NeighbourY);
+			CollapseCell(NeighbourX, NeighbourY, NeighbourZ);
 		}
 	}
 }
@@ -134,57 +138,63 @@ bool UWFCSubsystem::IsGridFull()
 	{
 		for (int y = 0; y < GridSize; y++)
 		{
-			if (!Grid[x][y].IsFullyCollapsed)
-				return false;
+			for (int z = 0; z < GridSize; z++)
+			{
+				if (!Grid[x][y][z].IsFullyCollapsed)
+					return false;
+			}
 		}
 	}
 	return true;
 }
 
-FIntPoint UWFCSubsystem::FindLowestEntropy()
+FIntVector UWFCSubsystem::FindLowestEntropy()
 {
-	FIntPoint LowestEntropyIndex = FIntPoint(0, 0);
+	FIntVector LowestEntropyIndex = FIntVector(0, 0, 0);
 	int32 LowestEntropy = 999999; //To Do: Remove temp value
 
 	for (int x = 0; x < GridSize; x++)
 	{
 		for (int y = 0; y < GridSize; y++)
 		{
-			if (Grid[x][y].IsFullyCollapsed || Grid[x][y].AvailableCellKeys.IsEmpty())
-				continue;
-
-			if (Grid[x][y].Entropy < LowestEntropy)
+			for (int z = 0; z < GridSize; z++)
 			{
-				LowestEntropyIndex = FIntPoint(x, y);
-				LowestEntropy = Grid[x][y].Entropy;
+				if (Grid[x][y][z].IsFullyCollapsed || Grid[x][y][z].AvailableCellKeys.IsEmpty())
+					continue;
+
+				if (Grid[x][y][z].Entropy < LowestEntropy)
+				{
+					LowestEntropyIndex = FIntVector(x, y, z);
+					LowestEntropy = Grid[x][y][z].Entropy;
+				}
 			}
 		}
 	}
 	return LowestEntropyIndex;
 }
 
-void UWFCSubsystem::UpdateEntropy(int32 x, int32 y)
+void UWFCSubsystem::UpdateEntropy(int32 x, int32 y, int32 z)
 {
 	int32 TotalWeight = 0;
-	for (TSubclassOf<ARoomBase> CellKey : Grid[x][y].AvailableCellKeys)
+	for (TSubclassOf<ARoomBase> CellKey : Grid[x][y][z].AvailableCellKeys)
 	{
 		TotalWeight += AdjacencyRules[CellKey].Weight;
 	}
-	Grid[x][y].Entropy = TotalWeight;
+	Grid[x][y][z].Entropy = TotalWeight;
 }
 
-void UWFCSubsystem::AssignRandomWeightedRoom(int32 x, int32 y)
+void UWFCSubsystem::AssignRandomWeightedRoom(int32 x, int32 y, int32 z)
 {
 	int32 TotalWeight = 0;
 
-	for (TSubclassOf<ARoomBase> Room : Grid[x][y].AvailableCellKeys)
+	for (TSubclassOf<ARoomBase> Room : Grid[x][y][z].AvailableCellKeys)
 	{
 		TotalWeight += AdjacencyRules[Room].Weight;
 	}
 
 	int32 Rand = FMath::RandRange(0, TotalWeight);
 
-	for (TSubclassOf<ARoomBase> Room : Grid[x][y].AvailableCellKeys)
+	for (TSubclassOf<ARoomBase> Room : Grid[x][y][z].AvailableCellKeys)
 	{
 		if (Rand > AdjacencyRules[Room].Weight)
 		{
@@ -192,19 +202,20 @@ void UWFCSubsystem::AssignRandomWeightedRoom(int32 x, int32 y)
 			continue;
 		}
 
-		Grid[x][y].AvailableCellKeys.Empty();
-		Grid[x][y].AvailableCellKeys.Add(Room);
-		Grid[x][y].IsFullyCollapsed = true;
-		UpdateEntropy(x, y);
+		Grid[x][y][z].AvailableCellKeys.Empty();
+		Grid[x][y][z].AvailableCellKeys.Add(Room);
+		Grid[x][y][z].IsFullyCollapsed = true;
+		UpdateEntropy(x, y, z);
 
 		for (int i = 0; i < IndexOffset.Num(); i++)
 		{
 			int32 NeighbourX = IndexOffset[i].X + x;
 			int32 NeighbourY = IndexOffset[i].Y + y;
+			int32 NeighbourZ = IndexOffset[i].Z + z;
 
-			if (Grid.IsValidIndex(NeighbourX) && Grid[NeighbourX].IsValidIndex(NeighbourY))
+			if (Grid.IsValidIndex(NeighbourX) && Grid[NeighbourX].IsValidIndex(NeighbourY) && Grid[NeighbourX][NeighbourY].IsValidIndex(NeighbourZ))
 			{
-				CollapseCell(NeighbourX, NeighbourY);
+				CollapseCell(NeighbourX, NeighbourY, NeighbourZ);
 			}
 		}
 
@@ -218,14 +229,17 @@ void UWFCSubsystem::SpawnGrid()
 	{
 		for (int y = 0; y < GridSize; y++)
 		{
-			if (Grid[x][y].AvailableCellKeys.IsEmpty())
-				continue;
+			for (int z = 0; z < GridSize; z++)
+			{
+				if (Grid[x][y][z].AvailableCellKeys.IsEmpty())
+					continue;
 
-			FVector Position = FVector(x * CellOffset, y * CellOffset, 0);
-			FRotator Rotation(0.0f, 0.0f, 0.0f);
-			ARoomBase* Room = GetWorld()->SpawnActor<ARoomBase>(Grid[x][y].AvailableCellKeys[0], Position, Rotation);
-			FString Name = FString::Printf(TEXT("Room: %d,%d"), x, y);
-			Cast<AActor>(Room)->SetActorLabel(Name);
+				FVector Position = FVector(x * CellOffset, y * CellOffset, 0);
+				FRotator Rotation(0.0f, 0.0f, 0.0f);
+				ARoomBase* Room = GetWorld()->SpawnActor<ARoomBase>(Grid[x][y][z].AvailableCellKeys[0], Position, Rotation);
+				FString Name = FString::Printf(TEXT("Room: %d, %d, %d"), x, y, z);
+				Cast<AActor>(Room)->SetActorLabel(Name);
+			}
 		}
 	}
 }
@@ -239,11 +253,15 @@ void UWFCSubsystem::PopulateGrid()
 		Grid[x].SetNum(GridSize);
 		for (int y = 0; y < GridSize; y++)
 		{
-			for (TPair<TSubclassOf<ARoomBase>, FCellData>& Pair : AdjacencyRules)
+			Grid[x][y].SetNum(GridSize);
+			for (int z = 0; z < GridSize; z++)
 			{
-				Grid[x][y].AvailableCellKeys.Add(Pair.Key);
+				for (TPair<TSubclassOf<ARoomBase>, FCellData>& Pair : AdjacencyRules)
+				{
+					Grid[x][y][z].AvailableCellKeys.Add(Pair.Key);
+				}
+				UpdateEntropy(x, y, z);
 			}
-			UpdateEntropy(x, y);
 		}
 	}
 }
@@ -276,12 +294,14 @@ void UWFCSubsystem::LoadAdjacencyRules()
 		if (FJsonObjectConverter::JsonObjectToUStruct(RoomArray[0]->AsObject().ToSharedRef(), &RoomData, 0, 0))
 		{
 			FCellData FormatedRoomData;
-			FormatedRoomData.NeighbourCells.SetNum(4);
+			FormatedRoomData.NeighbourCells.SetNum(6);
 			//loaded in reverse order to match the way the grid is generated
-			FormatedRoomData.NeighbourCells[3].Row.Append(RoomData.Forward);
-			FormatedRoomData.NeighbourCells[2].Row.Append(RoomData.Back);
-			FormatedRoomData.NeighbourCells[1].Row.Append(RoomData.Left);
-			FormatedRoomData.NeighbourCells[0].Row.Append(RoomData.Right);
+			FormatedRoomData.NeighbourCells[5].Row.Append(RoomData.Forward);
+			FormatedRoomData.NeighbourCells[4].Row.Append(RoomData.Back);
+			FormatedRoomData.NeighbourCells[3].Row.Append(RoomData.Left);
+			FormatedRoomData.NeighbourCells[2].Row.Append(RoomData.Right);
+			FormatedRoomData.NeighbourCells[1].Row.Append(RoomData.Up);
+			FormatedRoomData.NeighbourCells[0].Row.Append(RoomData.Down);
 			FormatedRoomData.Weight = RoomData.Weight;
 			AdjacencyRules.Add(RoomName, FormatedRoomData);
 		}
