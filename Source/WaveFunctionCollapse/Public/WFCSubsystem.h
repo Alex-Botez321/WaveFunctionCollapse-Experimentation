@@ -31,19 +31,10 @@ struct FCellData
     //work around lack of 2D array
 
     UPROPERTY()
-    TSubclassOf<ARoomBase> CellClass;
-
-    UPROPERTY()
     int32 Weight;
 
     UPROPERTY()
     TArray<FNeighboursRow> NeighbourCells;
-
-    //needed for Tarray.find to work
-    bool operator==(const FCellData& Other) const
-    {
-        return CellClass == Other.CellClass;
-    }
 };
 
 USTRUCT(BlueprintType, Atomic)

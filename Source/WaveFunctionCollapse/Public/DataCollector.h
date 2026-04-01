@@ -24,7 +24,7 @@ protected:
 	UPROPERTY(BlueprintReadWrite, Category = "WFC Generation")
 	float Distance;
 
-	const int32 DirectionCount = 4;
+	const int32 DirectionCount = 6;
 
 	TArray<FJSonCellData> CellsData;
 public:	
@@ -39,9 +39,6 @@ struct FJSonCellData
 	//ensure UPROPERTY is added
 	//Unreal ignores fields which lack it
 	//work around lack of 2D array
-	
-	UPROPERTY()
-	TSubclassOf<ARoomBase> CellClass;
 
 	UPROPERTY()
 	int32 Weight;
@@ -54,6 +51,14 @@ struct FJSonCellData
 	TArray<TSubclassOf<ARoomBase>> Left;
 	UPROPERTY()
 	TArray<TSubclassOf<ARoomBase>> Right;
+	UPROPERTY()
+	TArray<TSubclassOf<ARoomBase>> Up;
+	UPROPERTY()
+	TArray<TSubclassOf<ARoomBase>> Down;
+
+	UPROPERTY()
+	TSubclassOf<ARoomBase> CellClass;
+
 
 	//needed for Tarray.find to work
 	bool operator==(const FJSonCellData& Other) const

@@ -276,7 +276,6 @@ void UWFCSubsystem::LoadAdjacencyRules()
 		if (FJsonObjectConverter::JsonObjectToUStruct(RoomArray[0]->AsObject().ToSharedRef(), &RoomData, 0, 0))
 		{
 			FCellData FormatedRoomData;
-			FormatedRoomData.CellClass = RoomData.CellClass;
 			FormatedRoomData.NeighbourCells.SetNum(4);
 			//loaded in reverse order to match the way the grid is generated
 			FormatedRoomData.NeighbourCells[3].Row.Append(RoomData.Forward);

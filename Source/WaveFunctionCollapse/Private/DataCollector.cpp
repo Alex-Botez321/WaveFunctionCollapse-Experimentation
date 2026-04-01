@@ -57,6 +57,8 @@ void ADataCollector::BeginPlay()
 		Direction[1] = -ItActor->GetActorForwardVector();
 		Direction[2] = ItActor->GetActorRightVector();
 		Direction[3] = -ItActor->GetActorRightVector();
+		Direction[4] = ItActor->GetActorUpVector();
+		Direction[5] = -ItActor->GetActorUpVector();
 
 		for (int i = 0; i < DirectionCount; i++)
 		{
@@ -73,13 +75,14 @@ void ADataCollector::BeginPlay()
 
 			if (bHit)
 			{
-				TSubclassOf<ARoomBase> HitClass = Hit.GetActor()->GetClass();
 
-				if (!HitClass->IsChildOf(ARoomBase::StaticClass()))
+				if (!Hit.GetActor()->GetClass()->IsChildOf(ARoomBase::StaticClass()))
 				{
 					UE_LOG(LogTemp, Warning, TEXT("Hit %s at ^s, not subclass of ARoomBase"), *Hit.GetActor()->GetName(), *Hit.ImpactPoint.ToString());
 					continue;
 				}
+
+				TSubclassOf<ARoomBase> HitClass = Hit.GetActor()->GetClass();
 
 				UE_LOG(LogTemp, Log, TEXT("Hit %s at ^s"), *Hit.GetActor()->GetName(), *Hit.ImpactPoint.ToString());
 				DrawDebugLine(World, Start, End, FColor::Green, true, 100.0f, 0, 1.5f);
@@ -103,11 +106,15 @@ void ADataCollector::BeginPlay()
 			CellsData[Index].Back.Empty();
 			CellsData[Index].Left.Empty();
 			CellsData[Index].Right.Empty();
+			CellsData[Index].Up.Empty();
+			CellsData[Index].Down.Empty();
 
 			CellsData[Index].Forward.Append(AdjacentCell[0]);
 			CellsData[Index].Back.Append(AdjacentCell[1]);
 			CellsData[Index].Left.Append(AdjacentCell[2]);
 			CellsData[Index].Right.Append(AdjacentCell[3]);
+			CellsData[Index].Up.Append(AdjacentCell[4]);
+			CellsData[Index].Down.Append(AdjacentCell[5]);
 		}
 		else
 		{
@@ -115,6 +122,8 @@ void ADataCollector::BeginPlay()
 			CurrentCell.Back.Append(AdjacentCell[1]);
 			CurrentCell.Left.Append(AdjacentCell[2]);
 			CurrentCell.Right.Append(AdjacentCell[3]);
+			CurrentCell.Up.Append(AdjacentCell[4]);
+			CurrentCell.Down.Append(AdjacentCell[5]);
 			CellsData.Add(CurrentCell);
 		}
 		
