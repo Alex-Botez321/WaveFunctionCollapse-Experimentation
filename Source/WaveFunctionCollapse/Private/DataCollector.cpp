@@ -46,8 +46,10 @@ void ADataCollector::BeginPlay()
 		{
 			AdjacentCell[0].Append(CellsData[Index].Forward);
 			AdjacentCell[1].Append(CellsData[Index].Back);
-			AdjacentCell[2].Append(CellsData[Index].Left);
-			AdjacentCell[3].Append(CellsData[Index].Right);
+			AdjacentCell[2].Append(CellsData[Index].Right);
+			AdjacentCell[3].Append(CellsData[Index].Left);
+			AdjacentCell[4].Append(CellsData[Index].Up);
+			AdjacentCell[5].Append(CellsData[Index].Down);
 		}
 
 		TArray<FVector> Direction;
@@ -78,13 +80,13 @@ void ADataCollector::BeginPlay()
 
 				if (!Hit.GetActor()->GetClass()->IsChildOf(ARoomBase::StaticClass()))
 				{
-					UE_LOG(LogTemp, Warning, TEXT("Hit %s at ^s, not subclass of ARoomBase"), *Hit.GetActor()->GetName(), *Hit.ImpactPoint.ToString());
+					UE_LOG(LogTemp, Warning, TEXT("WFC: Hit %s at ^s, not subclass of ARoomBase"), *Hit.GetActor()->GetName(), *Hit.ImpactPoint.ToString());
 					continue;
 				}
 
 				TSubclassOf<ARoomBase> HitClass = Hit.GetActor()->GetClass();
 
-				UE_LOG(LogTemp, Log, TEXT("Hit %s at ^s"), *Hit.GetActor()->GetName(), *Hit.ImpactPoint.ToString());
+				UE_LOG(LogTemp, Log, TEXT("WFC: Hit %s at ^s"), *Hit.GetActor()->GetName(), *Hit.ImpactPoint.ToString());
 				DrawDebugLine(World, Start, End, FColor::Green, true, 100.0f, 0, 1.5f);
 
 				if (!AdjacentCell[i].Contains(HitClass))

@@ -70,7 +70,7 @@ void UWFCSubsystem::CollapseCell(int32 x, int32 y, int32 z)
 		int32 NeighbourY = IndexOffset[i].Y + y;
 		int32 NeighbourZ = IndexOffset[i].Z + z;
 
-		if (!Grid.IsValidIndex(NeighbourX) || !Grid[NeighbourX].IsValidIndex(NeighbourY))
+		if (!Grid.IsValidIndex(NeighbourX) || !Grid[NeighbourX].IsValidIndex(NeighbourY) || Grid[NeighbourX][NeighbourY].IsValidIndex(NeighbourZ))
 			continue;
 
 		if (Grid[NeighbourX][NeighbourY][NeighbourZ].AvailableCellKeys.IsEmpty())
@@ -234,7 +234,7 @@ void UWFCSubsystem::SpawnGrid()
 				if (Grid[x][y][z].AvailableCellKeys.IsEmpty())
 					continue;
 
-				FVector Position = FVector(x * CellOffset, y * CellOffset, 0);
+				FVector Position = FVector(x * CellOffset, y * CellOffset, z * CellOffset);
 				FRotator Rotation(0.0f, 0.0f, 0.0f);
 				ARoomBase* Room = GetWorld()->SpawnActor<ARoomBase>(Grid[x][y][z].AvailableCellKeys[0], Position, Rotation);
 				FString Name = FString::Printf(TEXT("Room: %d, %d, %d"), x, y, z);
@@ -298,8 +298,8 @@ void UWFCSubsystem::LoadAdjacencyRules()
 			//loaded in reverse order to match the way the grid is generated
 			FormatedRoomData.NeighbourCells[5].Row.Append(RoomData.Forward);
 			FormatedRoomData.NeighbourCells[4].Row.Append(RoomData.Back);
-			FormatedRoomData.NeighbourCells[3].Row.Append(RoomData.Left);
-			FormatedRoomData.NeighbourCells[2].Row.Append(RoomData.Right);
+			FormatedRoomData.NeighbourCells[3].Row.Append(RoomData.Right);
+			FormatedRoomData.NeighbourCells[2].Row.Append(RoomData.Left);
 			FormatedRoomData.NeighbourCells[1].Row.Append(RoomData.Up);
 			FormatedRoomData.NeighbourCells[0].Row.Append(RoomData.Down);
 			FormatedRoomData.Weight = RoomData.Weight;
