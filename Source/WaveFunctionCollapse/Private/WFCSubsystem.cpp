@@ -59,7 +59,7 @@ void UWFCSubsystem::AlgorithmSolver()
 
 void UWFCSubsystem::CollapseCell(int32 x, int32 y, int32 z)
 {
-	//if (Grid[x][y].IsFullyCollapsed)
+	//if (Grid[x][y][z].IsFullyCollapsed)
 		//return;
 
 	bool HasBeenCollapsed = false;
@@ -70,7 +70,7 @@ void UWFCSubsystem::CollapseCell(int32 x, int32 y, int32 z)
 		int32 NeighbourY = IndexOffset[i].Y + y;
 		int32 NeighbourZ = IndexOffset[i].Z + z;
 
-		if (!Grid.IsValidIndex(NeighbourX) || !Grid[NeighbourX].IsValidIndex(NeighbourY) || Grid[NeighbourX][NeighbourY].IsValidIndex(NeighbourZ))
+		if (!Grid.IsValidIndex(NeighbourX) || !Grid[NeighbourX].IsValidIndex(NeighbourY) || !Grid[NeighbourX][NeighbourY].IsValidIndex(NeighbourZ))
 			continue;
 
 		if (Grid[NeighbourX][NeighbourY][NeighbourZ].AvailableCellKeys.IsEmpty())
@@ -96,8 +96,8 @@ void UWFCSubsystem::CollapseCell(int32 x, int32 y, int32 z)
 			if (AvailableCells.Contains(CellKey))
 				continue;
 
-			KeysToBeRemoved.Add(CellKey);
 			HasBeenCollapsed = true;
+			KeysToBeRemoved.Add(CellKey);
 		}
 
 		//removing rooms that do not accomodate neighbour requirements
@@ -186,7 +186,7 @@ void UWFCSubsystem::UpdateEntropy(int32 x, int32 y, int32 z)
 void UWFCSubsystem::AssignRandomWeightedRoom(int32 x, int32 y, int32 z)
 {
 	int32 TotalWeight = 0;
-
+	//To Do: Remove this and replace with entropy
 	for (TSubclassOf<ARoomBase> Room : Grid[x][y][z].AvailableCellKeys)
 	{
 		TotalWeight += AdjacencyRules[Room].Weight;
@@ -295,13 +295,12 @@ void UWFCSubsystem::LoadAdjacencyRules()
 		{
 			FCellData FormatedRoomData;
 			FormatedRoomData.NeighbourCells.SetNum(6);
-			//loaded in reverse order to match the way the grid is generated
-			FormatedRoomData.NeighbourCells[5].Row.Append(RoomData.Forward);
-			FormatedRoomData.NeighbourCells[4].Row.Append(RoomData.Back);
-			FormatedRoomData.NeighbourCells[3].Row.Append(RoomData.Right);
-			FormatedRoomData.NeighbourCells[2].Row.Append(RoomData.Left);
-			FormatedRoomData.NeighbourCells[1].Row.Append(RoomData.Up);
-			FormatedRoomData.NeighbourCells[0].Row.Append(RoomData.Down);
+			FormatedRoomData.NeighbourCells[0].Row.Append(RoomData.Forward);
+			FormatedRoomData.NeighbourCells[1].Row.Append(RoomData.Back);
+			FormatedRoomData.NeighbourCells[2].Row.Append(RoomData.Right);
+			FormatedRoomData.NeighbourCells[3].Row.Append(RoomData.Left);
+			FormatedRoomData.NeighbourCells[4].Row.Append(RoomData.Up);
+			FormatedRoomData.NeighbourCells[5].Row.Append(RoomData.Down);
 			FormatedRoomData.Weight = RoomData.Weight;
 			AdjacencyRules.Add(RoomName, FormatedRoomData);
 		}

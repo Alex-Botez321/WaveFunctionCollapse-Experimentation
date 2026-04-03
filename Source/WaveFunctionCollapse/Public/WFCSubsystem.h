@@ -98,7 +98,7 @@ public:
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Grid Config")
     int32 GridSize;
 
-    UPROPERTY(BlueprintReadOnly, Category = "Grid Config")
+    UPROPERTY(BlueprintReadWrite, Category = "Grid Config")
     TArray<FIntVector> IndexOffset;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite)
